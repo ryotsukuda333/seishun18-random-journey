@@ -19,7 +19,7 @@
 - フロントエンド: React + Vite (Cloudflare Pages)
 - バックエンド API: Hono (Cloudflare Workers)
 - データベース: Supabase (PostgreSQL)
-- 開発環境: Docker, DevContainer
+- 開発環境: Docker, ホスト上の Supabase CLI
 
 ## 外部 API
 
@@ -28,13 +28,35 @@
 
 ## 詳細な開発環境セットアップ
 
-このプロジェクトは、Docker 開発環境と Supabase CLI を使用しています。
+このプロジェクトでは、フロントエンドとバックエンドの開発に Docker を使用し、Supabase はホスト上で直接実行します。
 
 ### 前提条件
 
 - Docker と Docker Compose
 - Git
 - VS Code (推奨、DevContainer をサポート)
+- Supabase CLI (ホストマシンにインストール)
+
+### Supabase CLI のインストール
+
+**Mac の場合:**
+
+```bash
+brew install supabase/tap/supabase
+```
+
+**Windows の場合:**
+
+```bash
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+```
+
+**Linux の場合:**
+
+```bash
+curl -s https://raw.githubusercontent.com/supabase/cli/main/install.sh | bash
+```
 
 ### セットアップ手順
 
@@ -45,19 +67,7 @@ git clone https://github.com/yourname/seishun18-random-journey.git
 cd seishun18-random-journey
 ```
 
-2. 開発コンテナを起動
-
-```bash
-docker-compose up -d
-```
-
-3. コンテナに接続（VS Code の場合は DevContainer で開く）
-
-```bash
-docker exec -it seishun18-random-journey-app-1 sh
-```
-
-4. コンテナ内で Supabase 環境を初期化
+2. Supabase 環境を初期化（ホスト上で実行）
 
 ```bash
 # 初回のみ実行
@@ -67,7 +77,13 @@ supabase init
 supabase start
 ```
 
-5. 環境変数ファイルを設定
+3. 開発コンテナを起動
+
+```bash
+docker-compose up -d
+```
+
+4. 環境変数ファイルを設定
 
 ```bash
 # supabase startの出力されたURLとAPIキーを使って.envファイルを作成
@@ -86,21 +102,23 @@ VITE_API_URL=http://localhost:8787
 EOL
 ```
 
-6. 依存関係のインストールとローカルサーバー起動
+5. 依存関係のインストールとローカルサーバー起動
+
+**フロントエンド:**
 
 ```bash
-# フロントエンド
-cd frontend
-npm install
-npm run dev
-
-# バックエンド（別ターミナルで）
-cd api
-npm install
-npm run dev
+# コンテナに接続してフロントエンドサーバーを起動
+docker exec -it seishun18-random-journey-app-1 sh -c "cd frontend && npm install && npm run dev"
 ```
 
-7. アクセス方法
+**バックエンド:**
+
+```bash
+# 別ターミナルを開き、コンテナに接続してバックエンドサーバーを起動
+docker exec -it seishun18-random-journey-app-1 sh -c "cd api && npm install && npm run dev"
+```
+
+6. アクセス方法
 
 - フロントエンド: http://localhost:3000
 - バックエンド API: http://localhost:8787
@@ -108,7 +126,7 @@ npm run dev
 
 ### 開発時の注意点
 
-- Supabase の起動と停止
+- Supabase の起動と停止（ホスト上で実行）
 
 ```bash
 # 起動
@@ -118,7 +136,7 @@ supabase start
 supabase stop
 ```
 
-- データベース変更の適用
+- データベース変更の適用（ホスト上で実行）
 
 ```bash
 # 新しいマイグレーションファイルの作成
@@ -128,8 +146,20 @@ supabase migration new <変更名>
 supabase db reset
 ```
 
-- TypeScript 型定義の生成
+- TypeScript 型定義の生成（ホスト上で実行）
 
 ```bash
 supabase gen types typescript > frontend/src/types/supabase.ts
 ```
+
+- Docker 環境の停止
+
+```bash
+docker-compose down
+```
+
+### 注意点
+
+- Supabase CLI はホストマシン上で実行し、フロントエンドとバックエンドの開発は Docker コンテナ内で行います
+- ホスト上で起動した Supabase にはコンテナ内からも localhost で接続できます
+- マイグレーションやデータベース変更はすべてホスト上の Supabase CLI を使って管理します

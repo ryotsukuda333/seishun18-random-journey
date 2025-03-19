@@ -15,3 +15,5 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:${FRONTEND_PORT:-3000}"
       - "${BACKEND_PORT:-8787}:${BACKEND_PORT:-8787}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # ホストマシンへのアクセスを可能にする
