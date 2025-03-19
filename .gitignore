@@ -1,0 +1,60 @@
+# 依存関係
+node_modules/
+.pnp/
+.pnp.js
+
+# ビルド出力
+dist/
+build/
+.next/
+out/
+.cache/
+.output/
+
+# テスト
+coverage/
+
+# 環境変数
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# ログ
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# エディタディレクトリと設定
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.devcontainer/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+*.pem
+
+# Cloudflare
+.wrangler/
+.dev.vars
+
+# Supabase
+.supabase/
+
+# その他
+.DS_Store
+Thumbs.db
+.vercel
+.netlify
