@@ -1,0 +1,13 @@
+name = "seishun18-random-api"
+main = "src/index.ts"
+compatibility_date = "2023-12-01"
+
+[vars]
+SUPABASE_URL = ""
+SUPABASE_ANON_KEY = ""
+API_CACHE_TTL = "86400"
+ALLOW_ORIGINS = "http://localhost:3000,https://seishun18-random.pages.dev"
+
+# 本番環境でのみ必要
+[env.production]
+# production環境の変数
