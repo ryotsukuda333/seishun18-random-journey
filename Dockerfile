@@ -1,8 +1,8 @@
-FROM node:20-alpine
+FROM node:20
 
 WORKDIR /workspace
 
-RUN apk add --no-cache git curl
+RUN apt-get update && apt-get install -y git curl
 
 # Wrangler CLIのインストール
 RUN npm install -g wrangler

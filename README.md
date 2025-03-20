@@ -71,10 +71,11 @@ cd seishun18-random-journey
 
 ```bash
 # 初回のみ実行
-supabase init
+npm install supabase --save-dev
+npx supabase init
 
 # Supabaseローカル環境を起動
-supabase start
+npx supabase start
 ```
 
 3. 開発コンテナを起動
