@@ -25,7 +25,7 @@
 - Hono ベースの Workers プロジェクト初期化
 - TypeScript 設定 (strict mode 有効化)
 - wrangler.toml 設定 (環境変数, KV Namespaces バインディング)
-- Workers KV Namespaces 作成 (STATION_CACHE, CONTACT_RATE_LIMIT)
+- Workers KV Namespaces 作成 (STATION_CACHE, JOURNEY_RATE_LIMIT, STATION_SEARCH_RATE_LIMIT)
 - CORS ミドルウェア設定 (Hono CORS)
 - ロガーミドルウェア実装
 - _Requirements: 9.1, 9.2, 9.4_
@@ -84,14 +84,16 @@
   - 距離レンジフィルタリング
   - 方角フィルタリング (北/南/東/西 判定)
   - 都道府県除外フィルタリング
-  - _Requirements: 2.3, 2.4, 2.5_
+  - 海上座標スナップロジック実装 (最寄りの陸地駅検索)
+  - _Requirements: 2.2, 2.3, 2.4, 2.5_
 
 - [ ] 7.3 ランダム抽選とリンク生成
+  - Workers KV によるレート制限チェック (IP別: 10回/日)
   - フィルタリング済み駅配列からランダム選択 (Math.random())
   - ジョルダン外部リンク生成関数実装
   - Journey オブジェクト組み立て
-  - エラーレスポンス実装 (NO_SUITABLE_DESTINATION, RETRY_LIMIT_EXCEEDED)
-  - _Requirements: 2.1, 3.3, 3.4_
+  - エラーレスポンス実装 (NO_SUITABLE_DESTINATION, RETRY_LIMIT_EXCEEDED, RATE_LIMIT_EXCEEDED)
+  - _Requirements: 2.1, 3.3, 3.4, 8.7_
 
 ### 8. GET /api/announcements エンドポイント実装
 
@@ -101,21 +103,12 @@
 - エラーハンドリング (DATABASE_ERROR)
 - _Requirements: 6.7_
 
-### 9. POST /api/contact エンドポイント実装
+### 9. GET /api/station/search レート制限実装
 
-- [ ] 9.1 バリデーションとレート制限 (P)
-  - Zod バリデーションスキーマ定義 (ContactFormSchema)
-  - リクエストボディバリデーション
-  - Workers KV によるレート制限チェック (IP別: 10件/日)
-  - レート制限カウンター更新
-  - _Requirements: 8.7_
-
-- [ ] 9.2 GitHub Issues 自動作成
-  - Octokit クライアント設定
-  - Issue 作成リクエスト実装 (タイトル, 本文, ラベル)
-  - Issue URL レスポンス生成
-  - エラーハンドリング (RATE_LIMIT_EXCEEDED, EXTERNAL_API_ERROR)
-  - _Requirements: 6.7_
+- Workers KV によるレート制限チェック (IP別: 20回/日)
+- レート制限カウンター更新
+- エラーレスポンス実装 (RATE_LIMIT_EXCEEDED)
+- _Requirements: 8.7_
 
 ---
 
@@ -123,7 +116,7 @@
 
 ### 10. 共通コンポーネントと型定義 (P)
 
-- TypeScript 型定義ファイル作成 (Station, Journey, Announcement, ContactFormData)
+- TypeScript 型定義ファイル作成 (Station, Journey, Announcement)
 - Zod バリデーションスキーマ定義 (フロントエンド側)
 - セッション管理ユーティリティ実装 (localStorage session_id)
 - Supabase クライアント設定 (カスタムヘッダー: x-session-id)
@@ -229,20 +222,12 @@
 
 ### 20. ContactPage コンポーネント実装
 
-- [ ] 20.1 ContactForm 実装
-  - 名前入力 (オプション)
-  - メールアドレス入力
-  - カテゴリ選択 (bug/feature/question/other)
-  - メッセージ入力 (Textarea)
-  - Zod バリデーション統合
-  - _Requirements: 6.6_
-
-- [ ] 20.2 フォーム送信とエラーハンドリング
-  - POST /api/contact API 呼び出し
-  - 送信成功メッセージ表示 (Issue URL リンク)
-  - エラーメッセージ表示 (VALIDATION_ERROR, RATE_LIMIT_EXCEEDED)
-  - ローディング状態管理
-  - _Requirements: 5.6_
+- Googleフォーム作成 (お問い合わせフォーム)
+- iframe埋め込みコード取得
+- ContactPageコンポーネント実装 (iframe表示)
+- ページヘッダー実装
+- ホームへ戻るボタン
+- _Requirements: 6.6_
 
 ### 21. ErrorPage コンポーネント実装
 
@@ -268,10 +253,9 @@
 
 - Miniflare によるローカルテスト環境構築
 - POST /api/station/nearest テスト (成功・失敗・バリデーションエラー)
-- GET /api/station/search テスト
-- POST /api/journey/random テスト (フィルタリング動作確認)
+- GET /api/station/search テスト (レート制限動作確認)
+- POST /api/journey/random テスト (フィルタリング動作確認、レート制限動作確認)
 - GET /api/announcements テスト
-- POST /api/contact テスト (レート制限動作確認)
 - _Requirements: 7.4_
 
 ### 24. フロントエンド E2E テスト実装 (Playwright)
@@ -311,9 +295,8 @@
 - main ブランチ自動デプロイ設定
 - _Requirements: 9.5_
 
-### 27. 環境変数と Secrets 設定
+### 27. 環境変数設定
 
-- Cloudflare Workers Secrets 設定 (GITHUB_TOKEN)
 - wrangler.toml 環境変数設定 (FRONTEND_ORIGIN, SUPABASE_URL, SUPABASE_ANON_KEY)
 - フロントエンド .env 設定 (VITE_API_BASE_URL, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)
 - .env.example ファイル作成
@@ -357,7 +340,7 @@
 | Req 2 | 4, 7, 14, 15.2 |
 | Req 3 | 7.3, 16.1 |
 | Req 4 | 16.1 |
-| Req 5 | 5, 6, 7, 15.3, 16.2, 20.2, 21 |
+| Req 5 | 5, 6, 7, 15.3, 16.2, 21 |
 | Req 6 | 11, 15, 16, 18, 19, 20, 21, 22 |
 | Req 7 | 4, 23, 25 |
 | Req 8 | 1, 2, 10, 27 |
