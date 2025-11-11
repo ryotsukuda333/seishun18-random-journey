@@ -9,36 +9,33 @@
 
 ## Phase 1: プロジェクト基盤とインフラ構築
 
-### 1. Supabase プロジェクト初期化とデータベーススキーマ構築 (P)
+- [x] 1. Supabase プロジェクト初期化とデータベーススキーマ構築 (P)
+  - Supabase プロジェクト作成と認証設定
+  - search_histories テーブル作成 (UUID, session_id, departure_station, destination_station, jorudan_link, created_at)
+  - announcements テーブル作成 (UUID, title, content, type, is_active, start_date, end_date, created_at, updated_at)
+  - Row Level Security (RLS) ポリシー設定 (匿名ユーザー向け session_id ベース)
+  - インデックス作成 (session_id, is_active + start_date 複合インデックス)
+  - 更新日時自動更新トリガー作成
+  - 30日経過データ自動削除関数と Cron Job 設定
+  - _Requirements: 8.7_
 
-- Supabase プロジェクト作成と認証設定
-- search_histories テーブル作成 (UUID, session_id, departure_station, destination_station, jorudan_link, created_at)
-- announcements テーブル作成 (UUID, title, content, type, is_active, start_date, end_date, created_at, updated_at)
-- Row Level Security (RLS) ポリシー設定 (匿名ユーザー向け session_id ベース)
-- インデックス作成 (session_id, is_active + start_date 複合インデックス)
-- 更新日時自動更新トリガー作成
-- 30日経過データ自動削除関数と Cron Job 設定
-- _Requirements: 8.7_
+- [x] 2. Cloudflare Workers プロジェクトセットアップ (P)
+  - Hono ベースの Workers プロジェクト初期化
+  - TypeScript 設定 (strict mode 有効化)
+  - wrangler.toml 設定 (環境変数, KV Namespaces バインディング)
+  - Workers KV Namespaces 作成 (STATION_CACHE, JOURNEY_RATE_LIMIT, STATION_SEARCH_RATE_LIMIT)
+  - CORS ミドルウェア設定 (Hono CORS)
+  - ロガーミドルウェア実装
+  - _Requirements: 9.1, 9.2, 9.4_
 
-### 2. Cloudflare Workers プロジェクトセットアップ (P)
-
-- Hono ベースの Workers プロジェクト初期化
-- TypeScript 設定 (strict mode 有効化)
-- wrangler.toml 設定 (環境変数, KV Namespaces バインディング)
-- Workers KV Namespaces 作成 (STATION_CACHE, JOURNEY_RATE_LIMIT, STATION_SEARCH_RATE_LIMIT)
-- CORS ミドルウェア設定 (Hono CORS)
-- ロガーミドルウェア実装
-- _Requirements: 9.1, 9.2, 9.4_
-
-### 3. Cloudflare Pages フロントエンドプロジェクトセットアップ (P)
-
-- React 18 + Vite プロジェクト初期化
-- TypeScript 設定 (strict mode)
-- Tailwind CSS 3 セットアップ
-- React Router 6 設定
-- 環境変数設定 (.env.example, .env.local)
-- ESLint + Prettier 設定
-- _Requirements: 9.1_
+- [x] 3. Cloudflare Pages フロントエンドプロジェクトセットアップ (P)
+  - React 18 + Vite プロジェクト初期化
+  - TypeScript 設定 (strict mode)
+  - Tailwind CSS 3 セットアップ
+  - React Router 6 設定
+  - 環境変数設定 (.env.example, .env.local)
+  - ESLint + Prettier 設定
+  - _Requirements: 9.1_
 
 ---
 

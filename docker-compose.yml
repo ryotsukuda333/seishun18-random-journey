@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seishun18-dev
+    volumes:
+      - .:/workspace:cached
+      - node_modules_api:/workspace/api/node_modules
+      - node_modules_frontend:/workspace/frontend/node_modules
+    ports:
+      - "5173:5173"  # Vite dev server (frontend)
+      - "8787:8787"  # Wrangler dev server (API)
+    environment:
+      # Allow connection to host's Supabase
+      - SUPABASE_URL=http://host.docker.internal:54321
+      - NODE_ENV=development
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+
+volumes:
+  node_modules_api:
+  node_modules_frontend:

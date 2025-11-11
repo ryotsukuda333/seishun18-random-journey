@@ -1,0 +1,20 @@
+name = "seishun18-random-journey-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+FRONTEND_ORIGIN = "http://localhost:5173"
+SUPABASE_URL = "http://localhost:54321"
+SUPABASE_ANON_KEY = ""
+
+[[kv_namespaces]]
+binding = "STATION_CACHE"
+id = ""
+
+[[kv_namespaces]]
+binding = "JOURNEY_RATE_LIMIT"
+id = ""
+
+[[kv_namespaces]]
+binding = "STATION_SEARCH_RATE_LIMIT"
+id = ""
