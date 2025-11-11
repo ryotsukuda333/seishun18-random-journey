@@ -1,6 +1,9 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import stationRoutes from './routes/station';
+import journeyRoutes from './routes/journey';
+import announcementsRoutes from './routes/announcements';
 
 // Environment type definition
 export type Env = {
@@ -33,12 +36,10 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes will be added here
-// TODO: Add route handlers for:
-// - POST /api/station/nearest
-// - GET /api/station/search
-// - POST /api/journey/random
-// - GET /api/announcements
+// API routes
+app.route('/api/station', stationRoutes);
+app.route('/api/journey', journeyRoutes);
+app.route('/api/announcements', announcementsRoutes);
 
 app.notFound((c) => {
   return c.json({ error: 'NOT_FOUND', message: 'Endpoint not found' }, 404);
