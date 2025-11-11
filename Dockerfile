@@ -11,9 +11,6 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /workspace
 
-# Install global dependencies
-RUN npm install -g wrangler
-
 # Set user to non-root for security
 RUN useradd -m -s /bin/bash developer && \
     chown -R developer:developer /workspace

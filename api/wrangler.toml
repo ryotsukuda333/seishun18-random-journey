@@ -9,12 +9,15 @@ SUPABASE_ANON_KEY = ""
 
 [[kv_namespaces]]
 binding = "STATION_CACHE"
-id = ""
+id = "STATION_CACHE_PROD"
+preview_id = "STATION_CACHE_PREVIEW"
 
 [[kv_namespaces]]
 binding = "JOURNEY_RATE_LIMIT"
-id = ""
+id = "JOURNEY_RATE_LIMIT_PROD"
+preview_id = "JOURNEY_RATE_LIMIT_PREVIEW"
 
 [[kv_namespaces]]
 binding = "STATION_SEARCH_RATE_LIMIT"
-id = ""
+id = "STATION_SEARCH_RATE_LIMIT_PROD"
+preview_id = "STATION_SEARCH_RATE_LIMIT_PREVIEW"
