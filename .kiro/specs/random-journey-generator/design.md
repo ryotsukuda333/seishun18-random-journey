@@ -104,7 +104,6 @@ graph TB
 | **Type System** | TypeScript | 5.x | 型安全性 |
 | **Markdown Parser** | react-markdown | 9.x | 利用規約・プライバシーポリシー表示 |
 | **Icon Library** | lucide-react | 0.x | UIアイコン |
-| **GitHub API** | @octokit/rest | 20.x | お問い合わせIssue自動作成 |
 | **External APIs** | HeartRails Express | - | 駅情報取得 |
 | **External Link** | ジョルダン | - | 経路検索リンク生成 |
 | **Deployment** | Cloudflare Pages/Workers | - | ホスティング |
@@ -214,7 +213,7 @@ sequenceDiagram
 |-------|-------|------------|
 | **Req 1** | 位置情報取得と出発駅特定 | `useGeolocation` Hook + `/api/station/nearest` エンドポイント + 手動入力フォールバック |
 | **Req 2** | ランダム目的地駅の抽選 | `/api/journey/random` エンドポイント + Workers KV 全駅キャッシュ + フィルタリングロジック |
-| **Req 3** | 18きっぷ適合経路の取得 | ❌ **API統合なし** → ジョルダン外部リンク生成のみ (URL組み立て) |
+| **Req 3** | 18きっぷ適合経路リンク提示 | ✅ ジョルダンWeb外部リンク生成 (GETパラメータでJR普通・快速検索条件付与) |
 | **Req 4** | SNS共有 | Web Share API + Clipboard API フォールバック + OGP メタタグ |
 | **Req 5** | エラー処理とユーザー誘導 | 統一エラーハンドリング + フォールバックUI + リトライボタン |
 | **Req 6** | UI/UX とアクセシビリティ | Tailwind CSS + ARIA ラベル + キーボードナビゲーション + レスポンシブデザイン |
@@ -222,25 +221,25 @@ sequenceDiagram
 | **Req 8** | セキュリティとプライバシー | 環境変数管理 + HTTPS + RLS + 位置情報非永続化 |
 | **Req 9** | 運用とデプロイ | Cloudflare Pages/Workers + GitHub Actions CI/CD + 環境変数管理 |
 
-### 5.1 重要な設計決定: ジョルダンAPI統合の見送り
+### 5.1 重要な設計決定: ジョルダンWeb外部リンク方式
 
-**背景**: 調査の結果、ジョルダン社の公開APIドキュメントが発見されず、商用契約ベースと推定される。
+**背景**: ジョルダンAPIには18きっぷ対応経路のみを検索するフィルタリング機能がなく、Web版でのみ正確な経路確認が可能。
 
-**決定**: MVP (Minimum Viable Product) では経路検索API統合を見送り、**外部リンク生成方式**を採用。
+**決定**: 本システムでは**ジョルダンWeb検索ページへの直接リンク生成方式**を採用し、ユーザーがジョルダンサイト上で経路を確認する設計とする。
 
 **実装方針**:
 ```typescript
-// 経路検索リンク生成ロジック
+// ジョルダンWeb検索リンク生成ロジック
 const generateJorudanLink = (from: string, to: string): string => {
   const now = new Date();
   const params = new URLSearchParams({
-    eki1: from,
-    eki2: to,
+    eki1: from,          // 出発駅
+    eki2: to,            // 目的地駅
     Dym: String(now.getMonth() + 1),
     Ddd: String(now.getDate()),
     Dhh: String(now.getHours()),
     Dmn: String(now.getMinutes()),
-    type: '1', // 普通列車優先
+    type: '1',           // 普通列車優先
     S: '検索',
   });
   return `https://www.jorudan.co.jp/norikae/cgi/nori.cgi?${params}`;
@@ -248,10 +247,8 @@ const generateJorudanLink = (from: string, to: string): string => {
 ```
 
 **影響**:
-- ✅ **メリット**: 外部API依存なし、無料枠制約なし
-- ❌ **デメリット**: 経路の事前検証不可 (18きっぷ適合確認なし)、所要時間表示不可
-
-**将来的拡張**: ジョルダン社への商用API利用申請を検討 (Phase 2)
+- ✅ **メリット**: 外部API依存なし、無料枠制約なし、ジョルダンWebの正確な経路情報を活用
+- ⚠️ **注意点**: システム側では18きっぷ適合経路の事前検証は行わず、ユーザーがジョルダン上で確認
 
 ---
 
@@ -295,12 +292,8 @@ App (React Router)
 │   └── BackToHomeButton
 ├── ContactPage (/contact)
 │   ├── PageHeader (お問い合わせ)
-│   ├── ContactForm
-│   │   ├── NameInput
-│   │   ├── EmailInput
-│   │   ├── MessageTextarea
-│   │   └── SubmitButton
-│   └── ContactInfo (GitHub Issues リンク)
+│   ├── GoogleFormEmbed (iframe埋め込み)
+│   └── ContactInfo
 ├── AnnouncementManagement (/admin/announcements) **管理者専用**
 │   ├── AnnouncementList
 │   ├── CreateAnnouncementForm
@@ -372,16 +365,6 @@ interface Announcement {
   endDate?: Date;          // 表示終了日時 (オプション)
   createdAt: Date;         // 作成日時
   updatedAt: Date;         // 更新日時
-}
-
-/**
- * お問い合わせフォーム
- */
-interface ContactFormData {
-  name: string;            // 名前 (オプション)
-  email: string;           // メールアドレス
-  message: string;         // 問い合わせ内容
-  category: 'bug' | 'feature' | 'question' | 'other'; // カテゴリ
 }
 
 // ========================================
@@ -459,27 +442,6 @@ namespace AnnouncementAPI {
   }
 }
 
-/**
- * POST /api/contact
- */
-namespace ContactAPI {
-  export interface Request {
-    name?: string;
-    email: string;
-    message: string;
-    category: 'bug' | 'feature' | 'question' | 'other';
-  }
-
-  export interface Response {
-    success: boolean;
-    issueUrl?: string; // GitHub Issue URL (作成された場合)
-  }
-
-  export interface Error {
-    error: 'VALIDATION_ERROR' | 'RATE_LIMIT_EXCEEDED' | 'EXTERNAL_API_ERROR';
-    message: string;
-  }
-}
 
 // ========================================
 // Database Schema Types (Supabase)
@@ -586,15 +548,6 @@ const JourneyRandomRequestSchema = z.object({
   filter: JourneyFilterSchema.optional(),
 });
 
-/**
- * お問い合わせフォームバリデーション
- */
-const ContactFormSchema = z.object({
-  name: z.string().max(100, '名前は100文字以内で入力してください').optional(),
-  email: z.string().email('有効なメールアドレスを入力してください'),
-  message: z.string().min(10, 'メッセージは10文字以上で入力してください').max(2000, 'メッセージは2000文字以内で入力してください'),
-  category: z.enum(['bug', 'feature', 'question', 'other']),
-});
 
 /**
  * お知らせスキーマ
@@ -737,13 +690,14 @@ const AnnouncementSchema = z.object({
 
 **実装ロジック**:
 1. Zod でリクエストバリデーション
-2. Workers KV で `all_stations_cache` 取得 (TTL: 24h)
-3. Cache Miss 時、HeartRails API で全駅一覧取得
-4. フィルター適用 (距離計算: Haversine公式、方角判定、都道府県除外)
-5. フィルタリング後の駅からランダム選択 (Math.random())
-6. ジョルダンリンク生成
-7. セッションID生成 (UUID v4)
-8. Journey 型で返却
+2. **レート制限チェック** (Workers KV: IP別 10回/日)
+3. Workers KV で `all_stations_cache` 取得 (TTL: 24h)
+4. Cache Miss 時、HeartRails API で全駅一覧取得
+5. フィルター適用 (距離計算: Haversine公式、方角判定、都道府県除外、**海上座標スナップ**)
+6. フィルタリング後の駅からランダム選択 (Math.random())
+7. ジョルダンリンク生成
+8. セッションID生成 (UUID v4)
+9. Journey 型で返却
 
 **距離計算 (Haversine 公式)**:
 ```typescript
@@ -758,6 +712,72 @@ const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
+```
+
+**海上座標スナップロジック**:
+```typescript
+// 抽選された駅候補が海上座標の場合、最寄りの陸地駅にスナップする
+const snapToLandStation = (candidate: Station, allStations: Station[]): Station => {
+  // 簡易判定: 駅名が存在し、都道府県が設定されていれば陸地と判定
+  if (candidate.name && candidate.prefecture) {
+    return candidate;
+  }
+
+  // 海上座標の場合、最寄りの陸地駅を検索
+  const landStations = allStations.filter(s => s.name && s.prefecture);
+  if (landStations.length === 0) {
+    throw new Error('No land stations available');
+  }
+
+  // 最寄りの陸地駅を距離計算で特定
+  let nearestStation = landStations[0];
+  let minDistance = haversineDistance(
+    candidate.y, candidate.x,
+    nearestStation.y, nearestStation.x
+  );
+
+  for (const station of landStations.slice(1)) {
+    const distance = haversineDistance(
+      candidate.y, candidate.x,
+      station.y, station.x
+    );
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestStation = station;
+    }
+  }
+
+  return nearestStation;
+};
+```
+
+**レート制限実装** (Workers KV):
+```typescript
+// POST /api/journey/random のレート制限
+const checkRateLimit = async (env: Env, clientIP: string): Promise<boolean> => {
+  const RATE_LIMIT_KEY = `journey_rate_limit:${clientIP}`;
+  const currentCount = await env.JOURNEY_RATE_LIMIT.get(RATE_LIMIT_KEY);
+
+  if (currentCount && parseInt(currentCount) >= 10) {
+    return false; // レート制限超過
+  }
+
+  await env.JOURNEY_RATE_LIMIT.put(
+    RATE_LIMIT_KEY,
+    String((parseInt(currentCount || '0') + 1)),
+    { expirationTtl: 86400 } // 24時間
+  );
+
+  return true; // 制限内
+};
+
+// エンドポイント内での利用例
+if (!await checkRateLimit(c.env, c.req.header('CF-Connecting-IP') || '')) {
+  return c.json({
+    error: 'RATE_LIMIT_EXCEEDED',
+    message: '抽選回数の上限に達しました。明日再度お試しください。'
+  }, 429);
+}
 ```
 
 ---
@@ -806,97 +826,59 @@ const { data, error } = await supabase
 
 ---
 
-#### 6.3.5 POST `/api/contact`
+#### 6.3.5 ContactPage - Googleフォーム埋め込み
 
-**目的**: お問い合わせフォーム送信 (GitHub Issue 自動作成)
+**目的**: お問い合わせフォームをGoogleフォームで提供
 
-**リクエスト**:
-```json
-{
-  "name": "山田太郎",
-  "email": "taro@example.com",
-  "message": "経路検索が動作しません。出発駅を東京に設定すると...",
-  "category": "bug"
-}
-```
+**実装方針**:
+- Googleフォームを作成し、iframe埋め込みコードを取得
+- ContactPageコンポーネントでiframe表示
+- バックエンドAPI実装は不要 (Googleフォームが直接処理)
 
-**レスポンス (成功)**:
-```json
-{
-  "success": true,
-  "issueUrl": "https://github.com/ryotsukuda333/seishun18-random-journey/issues/123"
-}
-```
-
-**エラー**:
-```json
-{
-  "error": "RATE_LIMIT_EXCEEDED",
-  "message": "お問い合わせの送信制限に達しました。しばらく待ってから再試行してください。"
-}
-```
-
-**実装ロジック**:
-1. Zod で `ContactFormSchema` バリデーション
-2. Workers KV でレート制限チェック (IP別: 10件/日)
-3. GitHub API で Issue 自動作成
-4. Issue URL を返却
-
-**GitHub Issue 作成例** (Octokit):
+**実装例**:
 ```typescript
-import { Octokit } from '@octokit/rest';
+// ContactPage.tsx
+const ContactPage: React.FC = () => {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">お問い合わせ</h1>
 
-const octokit = new Octokit({
-  auth: env.GITHUB_TOKEN, // 環境変数から取得
-});
+      <div className="mb-6">
+        <p className="text-gray-600">
+          ご質問、不具合報告、機能要望などございましたら、
+          下記フォームよりお問い合わせください。
+        </p>
+      </div>
 
-const categoryLabels = {
-  bug: 'bug',
-  feature: 'enhancement',
-  question: 'question',
-  other: 'other',
+      {/* Googleフォーム埋め込み */}
+      <iframe
+        src="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true"
+        width="100%"
+        height="800"
+        frameBorder="0"
+        marginHeight={0}
+        marginWidth={0}
+        className="border border-gray-200 rounded-lg"
+      >
+        読み込んでいます…
+      </iframe>
+
+      <div className="mt-6">
+        <Link to="/" className="text-blue-600 hover:underline">
+          ← トップページに戻る
+        </Link>
+      </div>
+    </div>
+  );
 };
-
-const { data: issue } = await octokit.rest.issues.create({
-  owner: 'ryotsukuda333',
-  repo: 'seishun18-random-journey',
-  title: `[お問い合わせ] ${category}: ${message.substring(0, 50)}...`,
-  body: `
-## お問い合わせ内容
-
-**カテゴリ**: ${category}
-**名前**: ${name || '匿名'}
-**メールアドレス**: ${email}
-
----
-
-${message}
-
----
-
-*この Issue はお問い合わせフォームから自動生成されました*
-  `,
-  labels: [categoryLabels[category], 'user-feedback'],
-});
-
-return { success: true, issueUrl: issue.html_url };
 ```
 
-**レート制限実装** (Workers KV):
-```typescript
-const RATE_LIMIT_KEY = `contact_rate_limit:${clientIP}`;
-const currentCount = await env.CONTACT_RATE_LIMIT.get(RATE_LIMIT_KEY);
+**メリット**:
+- ✅ プライバシー保護: ユーザー情報をシステムで保存しない
+- ✅ 実装コスト削減: バックエンドAPI不要
+- ✅ Googleフォームの高機能性: スパム対策、通知、回答管理
 
-if (currentCount && parseInt(currentCount) >= 10) {
-  return c.json({ error: 'RATE_LIMIT_EXCEEDED', message: '送信制限に達しました' }, 429);
-}
 
-await env.CONTACT_RATE_LIMIT.put(
-  RATE_LIMIT_KEY,
-  String((parseInt(currentCount || '0') + 1)),
-  { expirationTtl: 86400 } // 24時間
-);
-```
 
 ---
 
@@ -1149,7 +1131,8 @@ const supabase = createClient(
 |-----|-------|-----|---------|
 | `all_stations_cache` | `Station[]` JSON | 24h | 全駅一覧キャッシュ |
 | `nearest_cache:{lat},{lng}` | `Station` JSON | 24h | 最寄り駅キャッシュ |
-| `contact_rate_limit:{IP}` | Number (送信回数) | 24h | お問い合わせレート制限 |
+| `journey_rate_limit:{IP}` | Number (抽選回数) | 24h | ランダム旅抽選レート制限 (10回/日) |
+| `station_search_rate_limit:{IP}` | Number (検索回数) | 24h | 駅検索レート制限 (20回/日) |
 
 **設定例** (wrangler.toml):
 ```toml
@@ -1158,8 +1141,12 @@ binding = "STATION_CACHE"
 id = "your-station-cache-kv-id"
 
 [[kv_namespaces]]
-binding = "CONTACT_RATE_LIMIT"
-id = "your-rate-limit-kv-id"
+binding = "JOURNEY_RATE_LIMIT"
+id = "your-journey-rate-limit-kv-id"
+
+[[kv_namespaces]]
+binding = "STATION_SEARCH_RATE_LIMIT"
+id = "your-station-search-rate-limit-kv-id"
 ```
 
 ---
@@ -1320,17 +1307,10 @@ FRONTEND_ORIGIN = "https://seishun18-random-journey.pages.dev"
 SUPABASE_URL = "https://your-project.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
-# Secrets (wrangler secret put コマンドで設定)
-# wrangler secret put GITHUB_TOKEN
-# GITHUB_TOKEN: GitHub Personal Access Token (repo scope)
-
 [[kv_namespaces]]
 binding = "STATION_CACHE"
 id = "your-station-cache-kv-id"
 
-[[kv_namespaces]]
-binding = "CONTACT_RATE_LIMIT"
-id = "your-rate-limit-kv-id"
 ```
 
 **frontend/.env.example**:
@@ -1567,15 +1547,9 @@ export const logger = async (c: Context, next: Next) => {
 - **第三者提供**: なし
 
 ### 1.3 お問い合わせ情報
-- **収集内容**: 名前 (任意)、メールアドレス、問い合わせ内容
-- **保存場所**: GitHub Issues (公開リポジトリ)
-- **保存期間**: 無期限
-
-### 1.4 アクセスログ
-- **収集内容**: IPアドレス、アクセス日時、User-Agent
-- **収集目的**: サービス改善、不正利用防止
-- **保存期間**: 30日間
-- **第三者提供**: なし
+- **収集内容**: お問い合わせフォーム入力内容
+- **管理方法**: Googleフォームで管理
+- **プライバシーポリシー**: [Google プライバシーポリシー](https://policies.google.com/privacy)
 
 ## 2. 利用目的
 
@@ -1593,10 +1567,10 @@ export const logger = async (c: Context, next: Next) => {
 - **目的**: 駅情報取得
 - **プライバシーポリシー**: http://express.heartrails.com/
 
-### 3.2 GitHub (お問い合わせ機能)
-- **送信データ**: お問い合わせフォーム内容
-- **目的**: Issue 管理による問い合わせ対応
-- **プライバシーポリシー**: https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
+### 3.2 Google (お問い合わせ機能)
+- **送信データ**: Googleフォーム入力内容
+- **目的**: お問い合わせ管理
+- **プライバシーポリシー**: https://policies.google.com/privacy
 
 ## 4. Cookie・ブラウザストレージ
 
