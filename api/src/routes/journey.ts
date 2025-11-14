@@ -7,7 +7,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import type { Env } from '../index';
-import { searchStationByName } from '../services/heartrails';
+import { searchStationByName, fetchNearestStation } from '../services/heartrails';
 import { calculateDistance, calculateDirection, getRandomElement } from '../utils/geo';
 import { isRateLimited } from '../utils/cache';
 import { createSupabaseClient } from '../utils/supabase';
@@ -60,23 +60,30 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
 
     const departure = departureStations[0];
 
-    // 全国の駅リストを取得 (キャッシュから、またはダミーデータ)
-    // 本来はHeartRails APIから全駅を取得する必要がありますが、
-    // ここでは簡略化のため、出発駅の都道府県から他の駅を検索します
-    const allStations = await searchStationByName(''); // 空文字で全駅取得は不可のため、実装時に要調整
+    // ランダムな座標を生成して駅を探す
+    const maxAttempts = 50;
+    const candidates = [];
 
-    // フィルタリング
-    let candidates = allStations.filter((station) => {
-      // 出発駅を除外
-      if (
-        station.name === departure.name &&
-        station.prefecture === departure.prefecture
-      ) {
-        return false;
-      }
+    for (let i = 0; i < maxAttempts; i++) {
+      // 日本の緯度経度の範囲内でランダム座標生成
+      // 北緯24度～45度、東経123度～145度
+      const randomLat = Math.random() * (45 - 24) + 24;
+      const randomLng = Math.random() * (145 - 123) + 123;
 
-      // 距離フィルタリング
-      if (distanceRange) {
+      try {
+        // ランダム座標から最寄り駅を取得
+        const stations = await fetchNearestStation(randomLat, randomLng);
+
+        if (stations.length === 0) continue;
+
+        const station = stations[0];
+
+        // 出発駅と同じ駅は除外
+        if (station.name === departure.name && station.prefecture === departure.prefecture) {
+          continue;
+        }
+
+        // 距離計算
         const distance = calculateDistance(
           departure.latitude,
           departure.longitude,
@@ -84,36 +91,43 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
           station.longitude
         );
 
-        if (distanceRange.min && distance < distanceRange.min) {
-          return false;
+        // 距離フィルタリング
+        if (distanceRange) {
+          if (distanceRange.min && distance < distanceRange.min) continue;
+          if (distanceRange.max && distance > distanceRange.max) continue;
         }
-        if (distanceRange.max && distance > distanceRange.max) {
-          return false;
+
+        // 方角フィルタリング
+        if (direction) {
+          const stationDirection = calculateDirection(
+            departure.latitude,
+            departure.longitude,
+            station.latitude,
+            station.longitude
+          );
+          if (stationDirection !== direction) continue;
         }
-      }
 
-      // 方角フィルタリング
-      if (direction) {
-        const stationDirection = calculateDirection(
-          departure.latitude,
-          departure.longitude,
-          station.latitude,
-          station.longitude
-        );
-        if (stationDirection !== direction) {
-          return false;
+        // 都道府県除外フィルタリング
+        if (excludePrefectures && excludePrefectures.includes(station.prefecture)) {
+          continue;
         }
+
+        candidates.push(station);
+      } catch (error) {
+        // APIエラーは無視して次の座標を試す
+        continue;
       }
+    }
 
-      // 都道府県除外フィルタリング
-      if (excludePrefectures && excludePrefectures.includes(station.prefecture)) {
-        return false;
-      }
+    // 重複削除
+    const uniqueCandidates = candidates.filter((station, index, self) =>
+      index === self.findIndex((s) =>
+        s.name === station.name && s.prefecture === station.prefecture
+      )
+    );
 
-      return true;
-    });
-
-    if (candidates.length === 0) {
+    if (uniqueCandidates.length === 0) {
       return c.json(
         {
           error: 'NO_SUITABLE_DESTINATION',
@@ -125,7 +139,7 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
     }
 
     // ランダム選択
-    const destination = getRandomElement(candidates);
+    const destination = getRandomElement(uniqueCandidates);
     if (!destination) {
       return c.json(
         {
@@ -137,9 +151,41 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
     }
 
     // ジョルダンリンク生成
-    const jorudanLink = `https://www.jorudan.co.jp/norikae/cgi/nori.cgi?eki1=${encodeURIComponent(
-      departureStation
-    )}&eki2=${encodeURIComponent(destination.name)}`;
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    const jorudanLink = `https://www.jorudan.co.jp/norikae/cgi/nori.cgi?` +
+      `eki1=${encodeURIComponent(departureStation)}` +
+      `&eki2=${encodeURIComponent(destination.name)}` +
+      `&via_on=-1` +
+      `&eki3=&eki4=&eki5=&eki6=` +
+      `&Dyy=${year}` +
+      `&Dmm=${month}` +
+      `&Ddd=${day}` +
+      `&Dhh=${hour}` +
+      `&Dmn1=${Math.floor(minute / 10)}` +
+      `&Dmn2=${minute % 10}` +
+      `&Cway=0` +
+      `&Cfp=1` +
+      `&Czu=2` +
+      `&C7=1` +
+      `&C2=0` +
+      `&C3=0` +
+      `&C1=0` +
+      `&sort=rec` +
+      `&C4=5` +
+      `&C5=0` +
+      `&C6=2` +
+      `&S=${encodeURIComponent('検索')}` +
+      `&Cmap1=` +
+      `&rf=nr` +
+      `&pg=1` +
+      `&eok1=&eok2=&eok3=&eok4=&eok5=&eok6=` +
+      `&Csg=1`;
 
     // 検索履歴を保存 (セッションIDがある場合)
     const sessionId = c.req.header('x-session-id');
