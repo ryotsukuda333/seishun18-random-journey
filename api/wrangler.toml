@@ -3,9 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 [vars]
-FRONTEND_ORIGIN = "http://localhost:5174"
+FRONTEND_ORIGIN = "http://localhost:5173"
 SUPABASE_URL = "http://localhost:54321"
 SUPABASE_ANON_KEY = ""
+EKISPERT_API_KEY = ""
 
 [[kv_namespaces]]
 binding = "STATION_CACHE"

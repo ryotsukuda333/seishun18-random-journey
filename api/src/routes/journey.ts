@@ -7,7 +7,11 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import type { Env } from '../index';
-import { searchStationByName, fetchNearestStation } from '../services/heartrails';
+import {
+  fetchJRLines,
+  fetchStationsByLine,
+  searchStationByName,
+} from '../services/ekispert';
 import { calculateDistance, calculateDirection, getRandomElement } from '../utils/geo';
 import { isRateLimited } from '../utils/cache';
 import { createSupabaseClient } from '../utils/supabase';
@@ -46,8 +50,12 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
   }
 
   try {
-    // 出発駅を検索
-    const departureStations = await searchStationByName(departureStation);
+    // 1. 出発駅を検索
+    const departureStations = await searchStationByName(
+      c.env.EKISPERT_API_KEY,
+      departureStation
+    );
+
     if (departureStations.length === 0) {
       return c.json(
         {
@@ -60,97 +68,114 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
 
     const departure = departureStations[0];
 
-    // ランダムな座標を生成して駅を探す
-    const maxAttempts = 50;
-    const candidates = [];
+    // 2. JR路線一覧を取得（キャッシュなしで毎回APIから）
+    const lines = await fetchJRLines(c.env.EKISPERT_API_KEY);
 
-    for (let i = 0; i < maxAttempts; i++) {
-      // 日本の緯度経度の範囲内でランダム座標生成
-      // 北緯24度～45度、東経123度～145度
-      const randomLat = Math.random() * (45 - 24) + 24;
-      const randomLng = Math.random() * (145 - 123) + 123;
-
-      try {
-        // ランダム座標から最寄り駅を取得
-        const stations = await fetchNearestStation(randomLat, randomLng);
-
-        if (stations.length === 0) continue;
-
-        const station = stations[0];
-
-        // 出発駅と同じ駅は除外
-        if (station.name === departure.name && station.prefecture === departure.prefecture) {
-          continue;
-        }
-
-        // 距離計算
-        const distance = calculateDistance(
-          departure.latitude,
-          departure.longitude,
-          station.latitude,
-          station.longitude
-        );
-
-        // 距離フィルタリング
-        if (distanceRange) {
-          if (distanceRange.min && distance < distanceRange.min) continue;
-          if (distanceRange.max && distance > distanceRange.max) continue;
-        }
-
-        // 方角フィルタリング
-        if (direction) {
-          const stationDirection = calculateDirection(
-            departure.latitude,
-            departure.longitude,
-            station.latitude,
-            station.longitude
-          );
-          if (stationDirection !== direction) continue;
-        }
-
-        // 都道府県除外フィルタリング
-        if (excludePrefectures && excludePrefectures.includes(station.prefecture)) {
-          continue;
-        }
-
-        candidates.push(station);
-      } catch (error) {
-        // APIエラーは無視して次の座標を試す
-        continue;
-      }
-    }
-
-    // 重複削除
-    const uniqueCandidates = candidates.filter((station, index, self) =>
-      index === self.findIndex((s) =>
-        s.name === station.name && s.prefecture === station.prefecture
-      )
-    );
-
-    if (uniqueCandidates.length === 0) {
+    if (!Array.isArray(lines) || lines.length === 0) {
       return c.json(
         {
-          error: 'NO_SUITABLE_DESTINATION',
-          message: '条件に合う目的地が見つかりませんでした',
-          suggestion: '検索条件を緩和してください',
-        },
-        404
-      );
-    }
-
-    // ランダム選択
-    const destination = getRandomElement(uniqueCandidates);
-    if (!destination) {
-      return c.json(
-        {
-          error: 'NO_SUITABLE_DESTINATION',
-          message: '目的地の抽選に失敗しました',
+          error: 'NO_LINES_FOUND',
+          message: 'JR路線情報の取得に失敗しました',
         },
         500
       );
     }
 
-    // ジョルダンリンク生成
+    // 3. ランダムにJR路線を選択
+    const randomLine = getRandomElement(lines);
+
+    // 4. 選択した路線の駅一覧を取得（KVキャッシュから取得、なければAPIから）
+    const cacheKey = `stations_${randomLine.code}`;
+    let allStations = await c.env.STATION_CACHE.get(cacheKey, 'json');
+    if (!allStations) {
+      allStations = await fetchStationsByLine(c.env.EKISPERT_API_KEY, randomLine.code);
+      await c.env.STATION_CACHE.put(cacheKey, JSON.stringify(allStations), {
+        expirationTtl: 86400, // 24時間
+      });
+    }
+
+    if (!Array.isArray(allStations) || allStations.length === 0) {
+      return c.json(
+        {
+          error: 'NO_STATIONS_FOUND',
+          message: '駅情報の取得に失敗しました',
+        },
+        500
+      );
+    }
+
+    // 5. 出発駅以外の駅をフィルタリング
+    let candidates = allStations.filter((s: any) => s.code !== departure.code);
+
+    // 6. 距離フィルタリング（緯度経度がある場合）
+    if (distanceRange && departure.GeoPoint) {
+      const departureLat = Number(departure.GeoPoint.lati_d);
+      const departureLng = Number(departure.GeoPoint.longi_d);
+
+      candidates = candidates.filter((s: any) => {
+        if (!s.GeoPoint) return false;
+
+        const stationLat = Number(s.GeoPoint.lati_d);
+        const stationLng = Number(s.GeoPoint.longi_d);
+
+        const distance = calculateDistance(
+          departureLat,
+          departureLng,
+          stationLat,
+          stationLng
+        );
+
+        if (distanceRange.min && distance < distanceRange.min) return false;
+        if (distanceRange.max && distance > distanceRange.max) return false;
+
+        return true;
+      });
+    }
+
+    // 7. 方角フィルタリング
+    if (direction && departure.GeoPoint) {
+      const departureLat = Number(departure.GeoPoint.lati_d);
+      const departureLng = Number(departure.GeoPoint.longi_d);
+
+      candidates = candidates.filter((s: any) => {
+        if (!s.GeoPoint) return false;
+
+        const stationLat = Number(s.GeoPoint.lati_d);
+        const stationLng = Number(s.GeoPoint.longi_d);
+
+        const stationDirection = calculateDirection(
+          departureLat,
+          departureLng,
+          stationLat,
+          stationLng
+        );
+
+        return stationDirection === direction;
+      });
+    }
+
+    // 8. 都道府県除外フィルタリング
+    if (excludePrefectures && excludePrefectures.length > 0) {
+      candidates = candidates.filter(
+        (s: any) => !excludePrefectures.includes(s.Prefecture.Name)
+      );
+    }
+
+    // 9. 条件に合う駅が見つからない場合
+    if (candidates.length === 0) {
+      return c.json(
+        {
+          error: 'NO_DESTINATION_FOUND',
+          message: '条件に合う目的地が見つかりませんでした',
+        },
+        404
+      );
+    }
+
+    // 10. ランダムに目的地駅を選択
+    const destination = getRandomElement(candidates);
+
+    // 13. ジョルダンリンク生成
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
@@ -158,9 +183,10 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
     const hour = now.getHours();
     const minute = now.getMinutes();
 
-    const jorudanLink = `https://www.jorudan.co.jp/norikae/cgi/nori.cgi?` +
-      `eki1=${encodeURIComponent(departureStation)}` +
-      `&eki2=${encodeURIComponent(destination.name)}` +
+    const jorudanLink =
+      `https://www.jorudan.co.jp/norikae/cgi/nori.cgi?` +
+      `eki1=${encodeURIComponent(departure.Name)}` +
+      `&eki2=${encodeURIComponent(destination.Name)}` +
       `&via_on=-1` +
       `&eki3=&eki4=&eki5=&eki6=` +
       `&Dyy=${year}` +
@@ -187,30 +213,31 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
       `&eok1=&eok2=&eok3=&eok4=&eok5=&eok6=` +
       `&Csg=1`;
 
-    // 検索履歴を保存 (セッションIDがある場合)
+    // 14. 検索履歴を保存 (セッションIDがある場合)
     const sessionId = c.req.header('x-session-id');
     if (sessionId) {
       const supabase = createSupabaseClient(c.env, sessionId);
       await supabase.from('search_histories').insert({
         session_id: sessionId,
-        departure_station: departureStation,
-        destination_station: destination.name,
+        departure_station: departure.Name,
+        destination_station: destination.Name,
         jorudan_link: jorudanLink,
       });
     }
 
+    // 15. レスポンス返却
     return c.json({
       departure: {
-        name: departure.name,
-        prefecture: departure.prefecture,
-        latitude: departure.latitude,
-        longitude: departure.longitude,
+        name: departure.Name,
+        prefecture: departure.Prefecture.Name,
+        latitude: departure.GeoPoint?.lati_d,
+        longitude: departure.GeoPoint?.longi_d,
       },
       destination: {
-        name: destination.name,
-        prefecture: destination.prefecture,
-        latitude: destination.latitude,
-        longitude: destination.longitude,
+        name: destination.Name,
+        prefecture: destination.Prefecture.Name,
+        latitude: destination.GeoPoint?.lati_d,
+        longitude: destination.GeoPoint?.longi_d,
       },
       jorudanLink,
     });

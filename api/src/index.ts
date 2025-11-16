@@ -10,6 +10,7 @@ export type Env = {
   FRONTEND_ORIGIN: string;
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
+  EKISPERT_API_KEY: string;
   STATION_CACHE: KVNamespace;
   JOURNEY_RATE_LIMIT: KVNamespace;
   STATION_SEARCH_RATE_LIMIT: KVNamespace;
