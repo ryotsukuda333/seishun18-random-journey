@@ -247,4 +247,32 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
   }
 });
 
+// DELETE /api/journey/cache - キャッシュクリア
+app.delete('/cache', async (c) => {
+  try {
+    // JR路線キャッシュを削除
+    await c.env.STATION_CACHE.delete('jr_lines');
+
+    // 駅情報キャッシュを一括削除するため、すべてのキーをリスト
+    const list = await c.env.STATION_CACHE.list({ prefix: 'stations_' });
+    const deletePromises = list.keys.map((key) => c.env.STATION_CACHE.delete(key.name));
+    await Promise.all(deletePromises);
+
+    return c.json({
+      success: true,
+      message: 'キャッシュを削除しました',
+      deletedCount: list.keys.length + 1, // stations_* + jr_lines
+    });
+  } catch (error) {
+    console.error('Cache clear error:', error);
+    return c.json(
+      {
+        error: 'CACHE_CLEAR_ERROR',
+        message: 'キャッシュの削除に失敗しました',
+      },
+      500
+    );
+  }
+});
+
 export default app;
