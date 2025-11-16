@@ -179,9 +179,10 @@ export async function searchStationLight(
   stationName: string
 ): Promise<Station[]> {
   // /station/light エンドポイントを使用（サジェスト用の軽量版）
+  // corporationBindでJR線のみに絞り込み
   const url = `${API_BASE_URL}/station/light?key=${apiKey}&name=${encodeURIComponent(
     stationName
-  )}&type=train&gcs=wgs84`;
+  )}&type=train&corporationBind=JR&gcs=wgs84`;
 
   const response = await fetch(url);
 

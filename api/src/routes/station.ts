@@ -127,7 +127,7 @@ app.get('/suggest', zValidator('query', suggestSchema), async (c) => {
   const { name } = c.req.valid('query');
 
   // キャッシュキー生成
-  const cacheKey = generateCacheKey('station:suggest', { name });
+  const cacheKey = generateCacheKey('station:suggest:v2', { name }); // v2で新しいキャッシュキーに変更
 
   // キャッシュチェック
   const cached = await getCache(c.env.STATION_CACHE, cacheKey);
