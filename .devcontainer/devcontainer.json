@@ -1,30 +1,63 @@
 {
-    "name": "Seishun18 Random Journey",
-    "dockerComposeFile": "../docker-compose.yml",
-    "service": "app",
-    "workspaceFolder": "/workspace",
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "dbaeumer.vscode-eslint",
-                "esbenp.prettier-vscode",
-                "ms-azuretools.vscode-docker",
-                "ms-vscode.vscode-typescript-next",
-                "bradlc.vscode-tailwindcss",
-                "GitHub.copilot"
-            ],
-            "settings": {
-                "editor.formatOnSave": true,
-                "editor.defaultFormatter": "esbenp.prettier-vscode",
-                "typescript.tsdk": "node_modules/typescript/lib",
-                "editor.codeActionsOnSave": {
-                    "source.fixAll.eslint": "explicit"
-                }
-            }
+  "name": "Seishun18 Random Journey Dev",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+
+  // VS Code settings
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[json]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "files.exclude": {
+          "**/node_modules": true,
+          "**/.wrangler": true
         }
+      },
+
+      // Recommended extensions
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-docker",
+        "supabase.supabase-vscode",
+        "cloudflare.cloudflare"
+      ]
+    }
+  },
+
+  // Forward ports
+  "forwardPorts": [5173, 8787],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite Frontend",
+      "onAutoForward": "notify"
     },
-    "forwardPorts": [],
-    "postCreateCommand": "cd frontend && npm install && cd ../api && npm install",
-    "remoteUser": "node",
-    "postStartCommand": "echo 'コンテナ内から以下のポートにアクセスできます: フロントエンド=${FRONTEND_PORT:-3000}, バックエンド=${BACKEND_PORT:-8787}, Supabase Studio=${SUPABASE_STUDIO_PORT:-54321}, Supabase API=${SUPABASE_API_PORT:-54322}'"
+    "8787": {
+      "label": "Wrangler API",
+      "onAutoForward": "notify"
+    }
+  },
+
+  // Container user
+  "remoteUser": "developer",
+
+  // Post create command
+  "postCreateCommand": "echo 'DevContainer ready! Run npm install in api/ and frontend/ directories.'"
 }

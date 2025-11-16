@@ -1,0 +1,4 @@
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=your-supabase-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key-here
+EKISPERT_API_KEY=your-ekispert-api-key-here

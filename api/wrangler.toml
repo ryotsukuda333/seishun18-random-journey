@@ -1,13 +1,28 @@
-name = "seishun18-random-api"
+name = "seishun18-api"
 main = "src/index.ts"
-compatibility_date = "2023-12-01"
+compatibility_date = "2024-01-01"
 
+# Default environment variables
 [vars]
-SUPABASE_URL = ""
-SUPABASE_ANON_KEY = ""
-API_CACHE_TTL = "86400"
-ALLOW_ORIGINS = "http://localhost:3000,https://seishun18-random.pages.dev"
+FRONTEND_ORIGIN = "https://seishun18-random-journey.pages.dev"
 
-# 本番環境でのみ必要
+# Development environment
+[env.dev.vars]
+FRONTEND_ORIGIN = "http://localhost:5173"
+
+[env.dev.kv_namespaces]
+binding = "STATION_CACHE"
+id = "90a8015b8db24ff8bc6cde285504858e"
+
+# Production environment
 [env.production]
-# production環境の変数
+vars = { FRONTEND_ORIGIN = "https://seishun18-random-journey.pages.dev" }
+
+[[env.production.kv_namespaces]]
+binding = "STATION_CACHE"
+id = "90a8015b8db24ff8bc6cde285504858e"
+
+# Default (used for both dev and production)
+[[kv_namespaces]]
+binding = "STATION_CACHE"
+id = "90a8015b8db24ff8bc6cde285504858e"

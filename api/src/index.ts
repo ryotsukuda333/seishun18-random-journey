@@ -1,55 +1,58 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import stationRoutes from './routes/station';
+import journeyRoutes from './routes/journey';
 
-// 環境変数の型定義
-type Env = {
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-  API_CACHE_TTL: string;
-  ALLOW_ORIGINS: string;
+// Environment type definition
+export type Env = {
+  FRONTEND_ORIGIN: string;
+  EKISPERT_API_KEY: string;
+  STATION_CACHE: KVNamespace;
 };
 
 const app = new Hono<{ Bindings: Env }>();
 
-// CORSミドルウェア
-app.use('/*', cors({
-  origin: (origin) => {
-    // ALLOW_ORIGINSをカンマ区切りで分割して配列に変換
-    const allowedOrigins = app.env?.ALLOW_ORIGINS ? app.env.ALLOW_ORIGINS.split(',') : [];
-    // originが許可リストにあるか、開発環境なら許可
-    return allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') ? origin : '';
-  },
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400,
-}));
+// Middleware: CORS
+app.use('/*', async (c, next) => {
+  const origin = c.req.header('Origin') || '';
 
-// ヘルスチェック用ルート
-app.get('/', (c) => {
-  return c.json({
-    message: 'Seishun18 Random Journey API',
-    status: 'running',
+  // Allow all *.pages.dev subdomains and configured origin
+  const allowedOrigins = c.env.FRONTEND_ORIGIN.split(',').map(o => o.trim());
+  const isPagesDevOrigin = origin.endsWith('.pages.dev');
+  const isAllowedOrigin = allowedOrigins.includes(origin) || isPagesDevOrigin;
+
+  const corsMiddleware = cors({
+    origin: isAllowedOrigin ? origin : allowedOrigins[0],
+    credentials: true,
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
   });
+  return corsMiddleware(c, next);
 });
 
-// 最寄り駅を取得するエンドポイント (実装は後ほど)
-app.get('/api/nearby-station', (c) => {
-  return c.json({ message: 'この機能はまだ実装されていません' });
+// Middleware: Logger (minimal logging without personal info)
+app.use('/*', logger());
+
+// Health check endpoint
+app.get('/health', (c) => {
+  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ランダムな駅を取得するエンドポイント (実装は後ほど)
-app.get('/api/random-station', (c) => {
-  return c.json({ message: 'この機能はまだ実装されていません' });
+// API routes
+app.route('/api/station', stationRoutes);
+app.route('/api/journey', journeyRoutes);
+
+app.notFound((c) => {
+  return c.json({ error: 'NOT_FOUND', message: 'Endpoint not found' }, 404);
 });
 
-// 経路検索エンドポイント (実装は後ほど)
-app.get('/api/route', (c) => {
-  return c.json({ message: 'この機能はまだ実装されていません' });
-});
-
-// 共有エンドポイント (実装は後ほど)
-app.post('/api/share', (c) => {
-  return c.json({ message: 'この機能はまだ実装されていません' });
+app.onError((err, c) => {
+  console.error('Unhandled error:', err);
+  return c.json(
+    { error: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+    500
+  );
 });
 
 export default app;

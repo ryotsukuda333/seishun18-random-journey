@@ -1,14 +1,25 @@
-FROM node:20
+# Development container for Seishun18 Random Journey Generator
+FROM node:20-bullseye
 
+# Install essential tools
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
 WORKDIR /workspace
 
-RUN apt-get update && apt-get install -y git curl
+# Set user to non-root for security
+RUN useradd -m -s /bin/bash developer && \
+    chown -R developer:developer /workspace
 
-# Wrangler CLIのインストール
-RUN npm install -g wrangler
+USER developer
 
-# 開発に必要なツールのインストール
-RUN npm install -g typescript ts-node nodemon vite
+# Expose ports
+# 5173: Vite dev server (frontend)
+# 8787: Wrangler dev server (API)
+EXPOSE 5173 8787
 
-# シェルの設定
-RUN echo "alias ll='ls -la'" >> ~/.bashrc
+CMD ["/bin/bash"]

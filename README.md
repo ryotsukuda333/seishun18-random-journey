@@ -1,166 +1,183 @@
-# 青春 18 切符ランダム旅行検索アプリ
+# Supabase CLI
 
-現在地からランダムな駅を選び、青春 18 切符での行き方を提案するウェブアプリケーション。
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 概要
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-このアプリケーションは、位置情報から最寄り駅を特定し、日本国内のランダムな駅への青春 18 切符を使った経路を提案します。冒険的な鉄道旅行のきっかけ作りに最適です。
+This repository contains all the functionality for Supabase CLI.
 
-## 機能
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-- 現在地の位置情報取得
-- ランダムな目的地駅の提案
-- 青春 18 切符での経路検索
-- 検索結果の SNS 共有
-- 検索履歴の保存
+## Getting started
 
-## 技術スタック
+### Install the CLI
 
-- フロントエンド: React + Vite (Cloudflare Pages)
-- バックエンド API: Hono (Cloudflare Workers)
-- データベース: Supabase (PostgreSQL)
-- 開発環境: Docker, ホスト上の Supabase CLI
-
-## 外部 API
-
-- 駅情報: HeartRails Express API
-- 経路検索: 乗換案内ジョルダン（青春 18 切符検索）
-
-## 詳細な開発環境セットアップ
-
-このプロジェクトでは、フロントエンドとバックエンドの開発に Docker を使用し、Supabase はホスト上で直接実行します。
-
-### 前提条件
-
-- Docker と Docker Compose
-- Git
-- VS Code (推奨、DevContainer をサポート)
-- Supabase CLI (ホストマシンにインストール)
-
-### Supabase CLI のインストール
-
-**Mac の場合:**
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-brew install supabase/tap/supabase
+npm i supabase --save-dev
 ```
 
-**Windows の場合:**
+To install the beta release channel:
 
 ```bash
-scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-scoop install supabase
+npm i supabase@beta --save-dev
 ```
 
-**Linux の場合:**
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
+
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-curl -s https://raw.githubusercontent.com/supabase/cli/main/install.sh | bash
+supabase bootstrap
 ```
 
-### セットアップ手順
-
-1. リポジトリをクローン
+Or using npx:
 
 ```bash
-git clone https://github.com/yourname/seishun18-random-journey.git
-cd seishun18-random-journey
+npx supabase bootstrap
 ```
 
-2. Supabase 環境を初期化（ホスト上で実行）
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-```bash
-# 初回のみ実行
-npm install supabase --save-dev
-npx supabase init
+## Docs
 
-# Supabaseローカル環境を起動
-npx supabase start
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
 ```
-
-3. 開発コンテナを起動
-
-```bash
-docker-compose up -d
-```
-
-4. 環境変数ファイルを設定
-
-```bash
-# supabase startの出力されたURLとAPIキーを使って.envファイルを作成
-# 表示されたURLとAPIキーを以下のコマンドの対応する箇所に置き換える
-cat > .env << EOL
-SUPABASE_URL=http://localhost:54321
-SUPABASE_ANON_KEY=<表示されたanon key>
-SUPABASE_SERVICE_ROLE_KEY=<表示されたservice_role key>
-EOL
-
-# フロントエンド用環境変数ファイル
-cat > frontend/.env.local << EOL
-VITE_SUPABASE_URL=http://localhost:54321
-VITE_SUPABASE_ANON_KEY=<表示されたanon key>
-VITE_API_URL=http://localhost:8787
-EOL
-```
-
-5. 依存関係のインストールとローカルサーバー起動
-
-**フロントエンド:**
-
-```bash
-# コンテナに接続してフロントエンドサーバーを起動
-docker exec -it seishun18-random-journey-app-1 sh -c "cd frontend && npm install && npm run dev"
-```
-
-**バックエンド:**
-
-```bash
-# 別ターミナルを開き、コンテナに接続してバックエンドサーバーを起動
-docker exec -it seishun18-random-journey-app-1 sh -c "cd api && npm install && npm run dev"
-```
-
-6. アクセス方法
-
-- フロントエンド: http://localhost:3000
-- バックエンド API: http://localhost:8787
-- Supabase Studio: http://localhost:54321
-
-### 開発時の注意点
-
-- Supabase の起動と停止（ホスト上で実行）
-
-```bash
-# 起動
-supabase start
-
-# 停止
-supabase stop
-```
-
-- データベース変更の適用（ホスト上で実行）
-
-```bash
-# 新しいマイグレーションファイルの作成
-supabase migration new <変更名>
-
-# マイグレーションの適用
-supabase db reset
-```
-
-- TypeScript 型定義の生成（ホスト上で実行）
-
-```bash
-supabase gen types typescript > frontend/src/types/supabase.ts
-```
-
-- Docker 環境の停止
-
-```bash
-docker-compose down
-```
-
-### 注意点
-
-- Supabase CLI はホストマシン上で実行し、フロントエンドとバックエンドの開発は Docker コンテナ内で行います
-- ホスト上で起動した Supabase にはコンテナ内からも localhost で接続できます
-- マイグレーションやデータベース変更はすべてホスト上の Supabase CLI を使って管理します
