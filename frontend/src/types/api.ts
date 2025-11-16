@@ -42,22 +42,6 @@ export interface JourneyRequest {
   excludePrefectures?: string[];
 }
 
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  type: 'info' | 'warning' | 'maintenance';
-  is_active: boolean;
-  start_date: string;
-  end_date: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AnnouncementsResponse {
-  announcements: Announcement[];
-}
-
 export interface ApiError {
   error: string;
   message: string;

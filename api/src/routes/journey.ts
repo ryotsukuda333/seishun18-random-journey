@@ -13,7 +13,6 @@ import {
   searchStationByName,
 } from '../services/ekispert';
 import { calculateDistance, calculateDirection, getRandomElement } from '../utils/geo';
-import { createSupabaseClient } from '../utils/supabase';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -205,19 +204,7 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
       `&eok1=&eok2=&eok3=&eok4=&eok5=&eok6=` +
       `&Csg=1`;
 
-    // 14. 検索履歴を保存 (セッションIDがある場合)
-    const sessionId = c.req.header('x-session-id');
-    if (sessionId) {
-      const supabase = createSupabaseClient(c.env, sessionId);
-      await supabase.from('search_histories').insert({
-        session_id: sessionId,
-        departure_station: departure.Name,
-        destination_station: destination.Name,
-        jorudan_link: jorudanLink,
-      });
-    }
-
-    // 15. レスポンス返却
+    // 14. レスポンス返却
     return c.json({
       departure: {
         name: departure.Name,

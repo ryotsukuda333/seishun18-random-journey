@@ -6,23 +6,10 @@ import type {
   StationsResponse,
   Journey,
   JourneyRequest,
-  AnnouncementsResponse,
   ApiError,
 } from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8787';
-
-/**
- * セッションIDを取得または生成
- */
-function getSessionId(): string {
-  let sessionId = sessionStorage.getItem('session-id');
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    sessionStorage.setItem('session-id', sessionId);
-  }
-  return sessionId;
-}
 
 /**
  * API共通リクエストヘッダー
@@ -30,7 +17,6 @@ function getSessionId(): string {
 function getHeaders(): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    'x-session-id': getSessionId(),
   };
 }
 
@@ -98,14 +84,4 @@ export async function fetchRandomJourney(
     body: JSON.stringify(request),
   });
   return handleResponse<Journey>(response);
-}
-
-/**
- * お知らせ一覧を取得
- */
-export async function fetchAnnouncements(): Promise<AnnouncementsResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/announcements`, {
-    headers: getHeaders(),
-  });
-  return handleResponse<AnnouncementsResponse>(response);
 }

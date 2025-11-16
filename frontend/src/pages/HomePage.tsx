@@ -2,10 +2,9 @@
  * ホームページコンポーネント
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchAnnouncements, suggestStation } from '@/utils/api';
-import type { Announcement } from '@/types/api';
+import { suggestStation } from '@/utils/api';
 
 interface Station {
   code: string;
@@ -21,21 +20,11 @@ interface Station {
 export function HomePage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [stationName, setStationName] = useState('');
   const [suggestions, setSuggestions] = useState<Station[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // お知らせ取得
-  useEffect(() => {
-    fetchAnnouncements()
-      .then((res) => setAnnouncements(res.announcements))
-      .catch(() => {
-        // お知らせ取得失敗は無視
-      });
-  }, []);
 
   // 駅名入力変更時
   const handleStationNameChange = (value: string) => {
@@ -124,28 +113,6 @@ export function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Announcements */}
-      {announcements.length > 0 && (
-        <section className="container mx-auto px-4 -mt-8 mb-12">
-          <div className="mx-auto max-w-5xl">
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 shadow-lg">
-              <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                <span className="text-base">📢</span>
-                お知らせ
-              </h3>
-              <div className="space-y-2">
-                {announcements.map((announcement) => (
-                  <div key={announcement.id} className="text-sm text-blue-800">
-                    <strong>{announcement.title}</strong>
-                    <p className="text-blue-700">{announcement.content}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Main Input Section */}
       <section className="container mx-auto px-4 py-12 sm:py-16">

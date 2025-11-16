@@ -3,17 +3,12 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import stationRoutes from './routes/station';
 import journeyRoutes from './routes/journey';
-import announcementsRoutes from './routes/announcements';
 
 // Environment type definition
 export type Env = {
   FRONTEND_ORIGIN: string;
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
   EKISPERT_API_KEY: string;
   STATION_CACHE: KVNamespace;
-  JOURNEY_RATE_LIMIT: KVNamespace;
-  STATION_SEARCH_RATE_LIMIT: KVNamespace;
 };
 
 const app = new Hono<{ Bindings: Env }>();
@@ -24,7 +19,7 @@ app.use('/*', async (c, next) => {
     origin: c.env.FRONTEND_ORIGIN,
     credentials: true,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'x-session-id'],
+    allowHeaders: ['Content-Type'],
   });
   return corsMiddleware(c, next);
 });
@@ -40,7 +35,6 @@ app.get('/health', (c) => {
 // API routes
 app.route('/api/station', stationRoutes);
 app.route('/api/journey', journeyRoutes);
-app.route('/api/announcements', announcementsRoutes);
 
 app.notFound((c) => {
   return c.json({ error: 'NOT_FOUND', message: 'Endpoint not found' }, 404);
