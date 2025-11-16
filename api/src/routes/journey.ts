@@ -214,12 +214,14 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
     return c.json({
       departure: {
         name: departure.Name,
+        yomi: departure.Yomi || '',
         prefecture: departure.Prefecture.Name,
         latitude: departure.GeoPoint?.lati_d,
         longitude: departure.GeoPoint?.longi_d,
       },
       destination: {
         name: destination.Name,
+        yomi: destination.Yomi || '',
         prefecture: destination.Prefecture.Name,
         latitude: destination.GeoPoint?.lati_d,
         longitude: destination.GeoPoint?.longi_d,

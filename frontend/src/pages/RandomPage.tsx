@@ -162,6 +162,11 @@ export function RandomPage() {
               <div className="text-2xl font-bold text-blue-900 flex items-center justify-center">
                 {journey.departure.name}
               </div>
+              {journey.departure.yomi && (
+                <div className="text-sm text-blue-600 mt-1 text-center">
+                  ({journey.departure.yomi})
+                </div>
+              )}
               <div className="text-sm text-blue-700 mt-1 text-center">
                 {journey.departure.prefecture}
               </div>
@@ -179,9 +184,16 @@ export function RandomPage() {
                 {displayedDestination || journey.destination.name}
               </div>
               {showPrefecture && (
-                <div className="text-sm text-green-700 mt-1 animate-fadeIn">
-                  {journey.destination.prefecture}
-                </div>
+                <>
+                  {journey.destination.yomi && (
+                    <div className="text-sm text-green-600 mt-1 animate-fadeIn text-center">
+                      ({journey.destination.yomi})
+                    </div>
+                  )}
+                  <div className="text-sm text-green-700 mt-1 animate-fadeIn text-center">
+                    {journey.destination.prefecture}
+                  </div>
+                </>
               )}
             </div>
 
@@ -195,6 +207,27 @@ export function RandomPage() {
               >
                 🚃 ジョルダンで経路を確認
               </a>
+
+              {/* 地図表示 (アニメーション完了後) */}
+              {showPrefecture && journey.destination.latitude && journey.destination.longitude && (
+                <div className="animate-fadeIn">
+                  <div className="text-sm text-gray-600 font-semibold mb-2 text-center">
+                    📍 目的地の位置
+                  </div>
+                  <div className="w-full h-[300px] rounded-lg overflow-hidden shadow-md">
+                    <iframe
+                      src={`https://www.google.com/maps?&q=${encodeURIComponent(journey.destination.name)}&z=15&ll=${journey.destination.latitude},${journey.destination.longitude}&output=embed`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="目的地の地図"
+                    ></iframe>
+                  </div>
+                </div>
+              )}
 
               <button
                 onClick={handleShare}

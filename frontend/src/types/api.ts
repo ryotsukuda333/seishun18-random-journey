@@ -17,12 +17,14 @@ export interface StationsResponse {
 export interface Journey {
   departure: {
     name: string;
+    yomi: string;
     prefecture: string;
     latitude: number;
     longitude: number;
   };
   destination: {
     name: string;
+    yomi: string;
     prefecture: string;
     latitude: number;
     longitude: number;

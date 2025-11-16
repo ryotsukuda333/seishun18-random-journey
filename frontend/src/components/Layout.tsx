@@ -17,7 +17,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link to="/" className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-gray-900">
-              🚃 青春18切符ランダム旅行
+              🚃 青春18きっぷランダム旅行
             </h1>
           </Link>
         </div>
@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
       <footer className="bg-white border-t border-gray-200 mt-auto">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-gray-600">
           <p>
-            © 2025 青春18切符ランダム旅行ジェネレーター |{' '}
+            © 2025 青春18きっぷランダム旅行ジェネレーター |{' '}
             <Link to="/terms" className="text-blue-600 hover:underline">
               利用規約
             </Link>{' '}
