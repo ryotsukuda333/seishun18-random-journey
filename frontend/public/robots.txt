@@ -1,0 +1,11 @@
+# robots.txt for 青春18きっぷランダム旅行ジェネレーター
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://seishun18-random-journey.pages.dev/sitemap.xml
+
+# クロール頻度の調整
+Crawl-delay: 1
