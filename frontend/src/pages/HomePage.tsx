@@ -329,8 +329,8 @@ export function HomePage() {
         <div className="container mx-auto px-4 py-8">
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
-              <button className="hover:text-gray-900 transition-colors">利用規約</button>
-              <button className="hover:text-gray-900 transition-colors">プライバシーポリシー</button>
+              <a href="/terms" className="hover:text-gray-900 transition-colors">利用規約</a>
+              <a href="/privacy" className="hover:text-gray-900 transition-colors">プライバシーポリシー</a>
               <button className="hover:text-gray-900 transition-colors">お問い合わせ</button>
             </div>
             <div className="mt-6 text-center text-sm text-gray-600">
