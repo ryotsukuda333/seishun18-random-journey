@@ -13,7 +13,6 @@ import {
   searchStationByName,
 } from '../services/ekispert';
 import { calculateDistance, calculateDirection, getRandomElement } from '../utils/geo';
-import { isRateLimited } from '../utils/cache';
 import { createSupabaseClient } from '../utils/supabase';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -34,20 +33,6 @@ const randomSchema = z.object({
 app.post('/random', zValidator('json', randomSchema), async (c) => {
   const { departureStation, distanceRange, direction, excludePrefectures } =
     c.req.valid('json');
-
-  // レート制限チェック (10件/日)
-  const clientIP = c.req.header('CF-Connecting-IP') || 'unknown';
-  const limited = await isRateLimited(c.env.JOURNEY_RATE_LIMIT, clientIP, 10, 86400);
-
-  if (limited) {
-    return c.json(
-      {
-        error: 'RATE_LIMIT_EXCEEDED',
-        message: '1日の利用回数上限に達しました',
-      },
-      429
-    );
-  }
 
   try {
     // 1. 出発駅を検索

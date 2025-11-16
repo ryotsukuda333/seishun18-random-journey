@@ -153,7 +153,12 @@ export async function fetchStationsByLine(
     return [];
   }
 
-  return data.ResultSet.Point.map((point) => ({
+  // Point may be a single object or an array
+  const points = Array.isArray(data.ResultSet.Point)
+    ? data.ResultSet.Point
+    : [data.ResultSet.Point];
+
+  return points.map((point) => ({
     code: point.Station.code,
     Name: point.Station.Name,
     Yomi: point.Station.Yomi,
@@ -164,7 +169,49 @@ export async function fetchStationsByLine(
 }
 
 /**
- * 駅名で駅情報を検索
+ * 駅名で駅情報を検索（サジェスト用）
+ * @param apiKey 駅すぱあとAPIキー
+ * @param stationName 駅名
+ * @returns 駅情報の配列
+ */
+export async function searchStationLight(
+  apiKey: string,
+  stationName: string
+): Promise<Station[]> {
+  // /station/light エンドポイントを使用（サジェスト用の軽量版）
+  const url = `${API_BASE_URL}/station/light?key=${apiKey}&name=${encodeURIComponent(
+    stationName
+  )}&type=train&gcs=wgs84`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Ekispert API error: ${response.status}`);
+  }
+
+  const data: StationResponse = await response.json();
+
+  if (!data.ResultSet || !data.ResultSet.Point) {
+    return [];
+  }
+
+  // Point may be a single object or an array
+  const points = Array.isArray(data.ResultSet.Point)
+    ? data.ResultSet.Point
+    : [data.ResultSet.Point];
+
+  return points.map((point) => ({
+    code: point.Station.code,
+    Name: point.Station.Name,
+    Yomi: point.Station.Yomi,
+    Type: point.Station.Type,
+    Prefecture: point.Prefecture,
+    GeoPoint: point.GeoPoint,
+  }));
+}
+
+/**
+ * 駅名で駅情報を検索（詳細版）
  * @param apiKey 駅すぱあとAPIキー
  * @param stationName 駅名
  * @returns 駅情報の配列
@@ -189,7 +236,54 @@ export async function searchStationByName(
     return [];
   }
 
-  return data.ResultSet.Point.map((point) => ({
+  // Point may be a single object or an array
+  const points = Array.isArray(data.ResultSet.Point)
+    ? data.ResultSet.Point
+    : [data.ResultSet.Point];
+
+  return points.map((point) => ({
+    code: point.Station.code,
+    Name: point.Station.Name,
+    Yomi: point.Station.Yomi,
+    Type: point.Station.Type,
+    Prefecture: point.Prefecture,
+    GeoPoint: point.GeoPoint,
+  }));
+}
+
+/**
+ * 座標から最寄り駅を検索
+ * @param apiKey 駅すぱあとAPIキー
+ * @param latitude 緯度
+ * @param longitude 経度
+ * @returns 駅情報の配列
+ */
+export async function fetchNearestStation(
+  apiKey: string,
+  latitude: number,
+  longitude: number
+): Promise<Station[]> {
+  // Ekispert API: /station/light?geoPoint=経度,緯度
+  const url = `${API_BASE_URL}/station/light?key=${apiKey}&geoPoint=${longitude},${latitude}&gcs=wgs84&limit=10`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Ekispert API error: ${response.status}`);
+  }
+
+  const data: StationResponse = await response.json();
+
+  if (!data.ResultSet || !data.ResultSet.Point) {
+    return [];
+  }
+
+  // Point may be a single object or an array
+  const points = Array.isArray(data.ResultSet.Point)
+    ? data.ResultSet.Point
+    : [data.ResultSet.Point];
+
+  return points.map((point) => ({
     code: point.Station.code,
     Name: point.Station.Name,
     Yomi: point.Station.Yomi,

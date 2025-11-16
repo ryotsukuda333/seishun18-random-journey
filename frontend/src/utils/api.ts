@@ -74,6 +74,19 @@ export async function searchStation(name: string): Promise<StationsResponse> {
 }
 
 /**
+ * 駅名サジェスト（軽量版）
+ */
+export async function suggestStation(name: string): Promise<StationsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/station/suggest?name=${encodeURIComponent(name)}`,
+    {
+      headers: getHeaders(),
+    }
+  );
+  return handleResponse<StationsResponse>(response);
+}
+
+/**
  * ランダムな目的地を取得
  */
 export async function fetchRandomJourney(
