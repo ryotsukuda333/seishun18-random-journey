@@ -10,13 +10,27 @@ import { ErrorMessage } from '@/components/ErrorMessage';
 import { fetchRandomJourney } from '@/utils/api';
 import type { Journey } from '@/types/api';
 
+// スロットアニメーション設定
+const SLOT_CONFIG = {
+  RANDOM_CHARS: '東西南北新大小上下中前後本町市田川山海島港橋',
+  ROLL_COUNT: 10,
+  ROLL_DELAY: 30,
+  CHAR_CONFIRM_DELAY: 100,
+  PREFECTURE_SHOW_DELAY: 300,
+} as const;
+
+// 地図設定
+const MAP_CONFIG = {
+  HEIGHT: 300,
+  ZOOM_LEVEL: 15,
+} as const;
+
 export function RandomPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
   const [journey, setJourney] = useState<Journey | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [isRolling, setIsRolling] = useState(false);
   const [displayedDestination, setDisplayedDestination] = useState('');
   const [showPrefecture, setShowPrefecture] = useState(false);
@@ -49,7 +63,6 @@ export function RandomPage() {
 
       // API呼び出し完了後、journeyをセット
       setJourney(result);
-      setRetryCount(0);
       setIsGenerating(false);
 
       // スロット演出開始（isGeneratingがfalseになった後）
@@ -61,39 +74,34 @@ export function RandomPage() {
           : 'ランダムな目的地の生成に失敗しました';
       setError(errorMessage);
       setIsGenerating(false);
-
-      if (retryCount < 3) {
-        setRetryCount(retryCount + 1);
-      }
+      // 自動再試行は行わない
     }
   };
 
   const performSlotAnimation = async (destinationName: string) => {
     setIsRolling(true);
     const chars = destinationName.split('');
-
-    // ランダム文字候補（日本語の駅名によく使われる文字）
-    const randomChars = '東西南北新大小上下中前後本町市田川山海島港橋'.split('');
+    const randomChars = SLOT_CONFIG.RANDOM_CHARS.split('');
 
     for (let i = 0; i < chars.length; i++) {
-      // 各文字をロールする（10回ランダム文字を表示）
-      for (let j = 0; j < 10; j++) {
+      // 各文字をロールする
+      for (let j = 0; j < SLOT_CONFIG.ROLL_COUNT; j++) {
         const randomChar = randomChars[Math.floor(Math.random() * randomChars.length)];
         setDisplayedDestination(
           chars.slice(0, i).join('') + randomChar + '　'.repeat(chars.length - i - 1)
         );
-        await new Promise(resolve => setTimeout(resolve, 30));
+        await new Promise(resolve => setTimeout(resolve, SLOT_CONFIG.ROLL_DELAY));
       }
 
       // 確定した文字を表示
       setDisplayedDestination(chars.slice(0, i + 1).join('') + '　'.repeat(chars.length - i - 1));
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, SLOT_CONFIG.CHAR_CONFIRM_DELAY));
     }
 
     // 全文字確定後、都道府県を表示
     setDisplayedDestination(destinationName);
     setIsRolling(false);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, SLOT_CONFIG.PREFECTURE_SHOW_DELAY));
     setShowPrefecture(true);
   };
 
@@ -139,12 +147,8 @@ export function RandomPage() {
         {error && (
           <ErrorMessage
             message={error}
-            suggestion={
-              retryCount < 3
-                ? '自動で再試行します...'
-                : 'ホームに戻って最初からやり直してください'
-            }
-            onRetry={retryCount >= 3 ? () => navigate('/') : undefined}
+            suggestion="ホームに戻って最初からやり直してください"
+            onRetry={() => navigate('/')}
           />
         )}
 

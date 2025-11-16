@@ -19,15 +19,15 @@ export interface Journey {
     name: string;
     yomi: string;
     prefecture: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number;
+    longitude?: number;
   };
   destination: {
     name: string;
     yomi: string;
     prefecture: string;
-    latitude: number;
-    longitude: number;
+    latitude?: number;
+    longitude?: number;
   };
   jorudanLink: string;
 }
