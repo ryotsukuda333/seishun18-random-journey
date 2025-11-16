@@ -53,8 +53,15 @@ app.post('/random', zValidator('json', randomSchema), async (c) => {
 
     const departure = departureStations[0];
 
-    // 2. JR路線一覧を取得（キャッシュなしで毎回APIから）
-    const lines = await fetchJRLines(c.env.EKISPERT_API_KEY);
+    // 2. JR路線一覧を取得（KVキャッシュから取得、なければAPIから）
+    const linesCacheKey = 'jr_lines';
+    let lines = await c.env.STATION_CACHE.get(linesCacheKey, 'json');
+    if (!lines) {
+      lines = await fetchJRLines(c.env.EKISPERT_API_KEY);
+      await c.env.STATION_CACHE.put(linesCacheKey, JSON.stringify(lines), {
+        expirationTtl: 86400, // 24時間
+      });
+    }
 
     if (!Array.isArray(lines) || lines.length === 0) {
       return c.json(
