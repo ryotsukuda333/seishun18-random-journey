@@ -332,7 +332,7 @@ export function HomePage() {
               <a href="/terms" className="hover:text-gray-900 transition-colors">利用規約</a>
               <a href="/privacy" className="hover:text-gray-900 transition-colors">プライバシーポリシー</a>
               <a
-                href="mailto:tsukuda@a-t-r-k.com?subject=【青春18きっぷランダム旅行】お問い合わせ&body=■お問い合わせ内容%0D%0A（こちらにお問い合わせ内容をご記入ください）%0D%0A%0D%0A■サイトURL%0D%0Ahttps://seishun18-random-journey.pages.dev/%0D%0A%0D%0A----%0D%0A※本メールは青春18きっぷランダム旅行サイトからのお問い合わせです"
+                href="mailto:tsukuda@a-t-r-k.com?subject=【青春18きっぷランダム旅行】お問い合わせ&body=■お問い合わせ内容%0D%0A（こちらにお問い合わせ内容をご記入ください）%0D%0A%0D%0A----%0D%0A※本メールは青春18きっぷランダム旅行サイトからのお問い合わせです"
                 className="hover:text-gray-900 transition-colors"
               >
                 お問い合わせ
