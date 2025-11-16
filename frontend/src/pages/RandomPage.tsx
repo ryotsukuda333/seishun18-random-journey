@@ -58,10 +58,15 @@ export function RandomPage() {
   const handleShare = async () => {
     if (!journey) return;
 
+    const shareText =
+      `🚃 青春18切符ランダム旅行\n\n` +
+      `📍 出発駅: ${journey.departure.name} (${journey.departure.prefecture})\n` +
+      `🎯 目的地: ${journey.destination.name} (${journey.destination.prefecture})\n\n` +
+      `経路を確認: ${journey.jorudanLink}`;
+
     const shareData = {
       title: '青春18切符ランダム旅行',
-      text: `${journey.departure.name}から${journey.destination.name}へランダム旅行!`,
-      url: window.location.href,
+      text: shareText,
     };
 
     if (navigator.share) {
@@ -72,8 +77,7 @@ export function RandomPage() {
       }
     } else {
       // Fallback: Copy to clipboard
-      const text = `${shareData.text}\n${shareData.url}`;
-      navigator.clipboard.writeText(text);
+      navigator.clipboard.writeText(shareText);
       alert('クリップボードにコピーしました!');
     }
   };
