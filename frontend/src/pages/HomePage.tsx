@@ -5,17 +5,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { suggestStation } from '@/utils/api';
-
-interface Station {
-  code: string;
-  Name: string;
-  Yomi: string;
-  Type: string;
-  Prefecture: {
-    code: string;
-    Name: string;
-  };
-}
+import type { Station } from '@/types/api';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -56,7 +46,7 @@ export function HomePage() {
 
   // 候補選択
   const handleSelectSuggestion = (station: Station) => {
-    setStationName(station.Name);
+    setStationName(station.name);
     setSuggestions([]);
     setShowSuggestions(false);
     setSelectedIndex(-1);
@@ -154,7 +144,7 @@ export function HomePage() {
                     <div className="absolute z-10 w-full mt-2 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {suggestions.map((station, index) => (
                         <div
-                          key={station.code}
+                          key={`${station.name}-${index}`}
                           onClick={() => handleSelectSuggestion(station)}
                           className={`px-4 py-3 cursor-pointer transition-colors ${
                             index === selectedIndex
@@ -162,9 +152,9 @@ export function HomePage() {
                               : 'hover:bg-gray-50'
                           }`}
                         >
-                          <div className="font-semibold text-gray-900">{station.Name}</div>
+                          <div className="font-semibold text-gray-900">{station.name}</div>
                           <div className="text-sm text-gray-600">
-                            {station.Prefecture.Name} • {station.Yomi}
+                            {station.prefecture} • {station.line}
                           </div>
                         </div>
                       ))}

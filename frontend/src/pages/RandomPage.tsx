@@ -19,12 +19,6 @@ const SLOT_CONFIG = {
   PREFECTURE_SHOW_DELAY: 300,
 } as const;
 
-// 地図設定
-const MAP_CONFIG = {
-  HEIGHT: 300,
-  ZOOM_LEVEL: 15,
-} as const;
-
 export function RandomPage() {
   const location = useLocation();
   const navigate = useNavigate();

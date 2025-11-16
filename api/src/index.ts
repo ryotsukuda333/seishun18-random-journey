@@ -15,8 +15,15 @@ const app = new Hono<{ Bindings: Env }>();
 
 // Middleware: CORS
 app.use('/*', async (c, next) => {
+  const origin = c.req.header('Origin') || '';
+
+  // Allow all *.pages.dev subdomains and configured origin
+  const allowedOrigins = c.env.FRONTEND_ORIGIN.split(',').map(o => o.trim());
+  const isPagesDevOrigin = origin.endsWith('.pages.dev');
+  const isAllowedOrigin = allowedOrigins.includes(origin) || isPagesDevOrigin;
+
   const corsMiddleware = cors({
-    origin: c.env.FRONTEND_ORIGIN,
+    origin: isAllowedOrigin ? origin : allowedOrigins[0],
     credentials: true,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],

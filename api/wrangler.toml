@@ -1,11 +1,28 @@
-name = "seishun18-random-journey-api"
+name = "seishun18-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
+# Default environment variables
 [vars]
-FRONTEND_ORIGIN = "http://localhost:5173"
-EKISPERT_API_KEY = ""
+FRONTEND_ORIGIN = "https://seishun18-random-journey.pages.dev"
 
+# Development environment
+[env.dev.vars]
+FRONTEND_ORIGIN = "http://localhost:5173"
+
+[env.dev.kv_namespaces]
+binding = "STATION_CACHE"
+id = "90a8015b8db24ff8bc6cde285504858e"
+
+# Production environment
+[env.production]
+vars = { FRONTEND_ORIGIN = "https://seishun18-random-journey.pages.dev" }
+
+[[env.production.kv_namespaces]]
+binding = "STATION_CACHE"
+id = "90a8015b8db24ff8bc6cde285504858e"
+
+# Default (used for both dev and production)
 [[kv_namespaces]]
 binding = "STATION_CACHE"
 id = "90a8015b8db24ff8bc6cde285504858e"
