@@ -185,7 +185,7 @@ export function RandomPage() {
                 目的地駅
               </div>
               <div className="text-2xl font-bold text-green-900 min-h-[2.5rem] flex items-center justify-center">
-                {displayedDestination || journey.destination.name}
+                {isRolling ? displayedDestination : journey.destination.name}
               </div>
               {showPrefecture && (
                 <>
@@ -230,7 +230,7 @@ export function RandomPage() {
                   </div>
                   <div className="w-full h-[300px] rounded-lg overflow-hidden shadow-md">
                     <iframe
-                      src={`https://www.google.com/maps?&q=${encodeURIComponent(journey.destination.name)}&z=15&ll=${journey.destination.latitude},${journey.destination.longitude}&output=embed`}
+                      src={`https://www.google.com/maps?&q=${encodeURIComponent(journey.destination.name + '駅')}&z=15&ll=${journey.destination.latitude},${journey.destination.longitude}&output=embed`}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
