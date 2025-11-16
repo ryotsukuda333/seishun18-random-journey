@@ -101,13 +101,13 @@ export function RandomPage() {
     if (!journey) return;
 
     const shareText =
-      `🚃 青春18切符ランダム旅行\n\n` +
+      `🚃 青春18きっぷランダム旅行\n\n` +
       `📍 出発駅: ${journey.departure.name} (${journey.departure.prefecture})\n` +
       `🎯 目的地: ${journey.destination.name} (${journey.destination.prefecture})\n\n` +
       `経路を確認: ${journey.jorudanLink}`;
 
     const shareData = {
-      title: '青春18切符ランダム旅行',
+      title: '青春18きっぷランダム旅行',
       text: shareText,
     };
 

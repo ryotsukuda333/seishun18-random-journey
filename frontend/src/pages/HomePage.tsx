@@ -110,30 +110,17 @@ export function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-sky-100/50 to-transparent" />
-        <div className="container relative mx-auto px-4 py-16 sm:py-24 md:py-32">
+        <div className="container relative mx-auto px-4 pb-6 pt-12 sm:py-24 md:py-32">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 px-4 py-1.5 text-sm sm:text-base text-white font-medium">
+            <div className="mb-4 sm:mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-sky-500 to-emerald-500 px-4 py-1.5 text-sm sm:text-base text-white font-medium">
               <span className="text-xl">✨</span>
-              <span>青春18切符でもっと自由に</span>
+              <span>青春18きっぷをもっと楽しく</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-sky-600 via-emerald-600 to-orange-500 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold bg-gradient-to-r from-sky-600 via-emerald-600 to-orange-500 bg-clip-text text-transparent leading-tight">
               行き先は運命に任せて、
               <br />
-              青春18切符でランダム旅行
+              青春18きっぷでランダム旅行
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              思いがけない出会いと発見があなたを待っています
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center items-center text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🚃</span>
-                <span>全国のJR線が乗り放題</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">✨</span>
-                <span>ランダムで新しい発見</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -171,7 +158,7 @@ export function HomePage() {
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-bold mb-4">ランダム旅行を始める</h2>
                 <p className="text-lg text-gray-600">
-                  出発駅を入力して、AIがランダムな目的地を提案します
+                  出発駅を入力して、ランダムな目的地を提案します
                 </p>
               </div>
 
@@ -227,6 +214,15 @@ export function HomePage() {
                   🚃 ランダム旅行を始める
                   <span className="text-2xl">→</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setStationName('東京');
+                    navigate('/random', { state: { departureStation: '東京' } });
+                  }}
+                  className="w-full border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50 font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                  🗼 東京駅で試してみる
+                </button>
               </div>
             </div>
           </div>
@@ -253,9 +249,9 @@ export function HomePage() {
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-2xl font-bold shadow-lg">
                 2
               </div>
-              <h3 className="text-xl font-semibold">AIが目的地を選定</h3>
+              <h3 className="text-xl font-semibold">目的地を自動選定</h3>
               <p className="text-gray-600">
-                青春18切符で行けるランダムな目的地を自動生成
+                青春18きっぷで行けるランダムな目的地を自動生成
               </p>
             </div>
             <div className="text-center space-y-4">
@@ -278,12 +274,12 @@ export function HomePage() {
             <div className="p-6 sm:p-8">
               <div className="flex items-start gap-4 mb-6">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-emerald-500 text-white text-2xl">
-                  ℹ️
+                  ✨
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">青春18切符とは？</h2>
+                  <h2 className="text-2xl font-bold mb-2">青春18きっぷとは？</h2>
                   <p className="text-gray-600">
-                    JR全線の普通列車・快速列車が乗り放題になるお得な切符です
+                    JR 全線の 普通列車・快速列車（普通車自由席） が乗り放題になるお得なきっぷです。
                   </p>
                 </div>
               </div>
@@ -292,21 +288,26 @@ export function HomePage() {
                   <div className="space-y-2">
                     <h4 className="font-semibold text-sky-700">料金</h4>
                     <p className="text-sm text-gray-600">
-                      5回分で12,050円（1回あたり2,410円）
+                      5回分で 12,050円（1回あたり 2,410円）
                     </p>
                   </div>
                   <div className="space-y-2">
                     <h4 className="font-semibold text-emerald-700">利用期間</h4>
-                    <p className="text-sm text-gray-600">
-                      春・夏・冬の学校休み期間
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      春・夏・冬の各シーズンに設定された期間のみ使用可<br />
+                      （例：春季 3/1〜4/10、夏季 7/20〜9/10、冬季 12/10〜1/10）
                     </p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-semibold text-orange-600">乗り放題の仕組み</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    1日（日付が変わるまで）JR全線の普通・快速列車が乗り放題。新幹線や特急は利用不可。
+                    1回（1日・日付が変わるまで）＝JR全線の普通・快速列車が乗り放題<br />
+                    新幹線・特急・急行・グリーン車は利用不可（別途特急券等が必要）
                   </p>
+                </div>
+                <div className="text-xs text-gray-500 mt-4">
+                  ※ 2025年時点の情報です
                 </div>
                 <a
                   href="https://www.jreast.co.jp/"
@@ -327,23 +328,13 @@ export function HomePage() {
       <footer className="border-t bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="mx-auto max-w-5xl">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-              <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
-                <button className="hover:text-gray-900 transition-colors">利用規約</button>
-                <button className="hover:text-gray-900 transition-colors">プライバシーポリシー</button>
-                <button className="hover:text-gray-900 transition-colors">お問い合わせ</button>
-              </div>
-              <div className="flex gap-4">
-                <button className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold">
-                  Twitter
-                </button>
-                <button className="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold">
-                  LINE
-                </button>
-              </div>
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
+              <button className="hover:text-gray-900 transition-colors">利用規約</button>
+              <button className="hover:text-gray-900 transition-colors">プライバシーポリシー</button>
+              <button className="hover:text-gray-900 transition-colors">お問い合わせ</button>
             </div>
             <div className="mt-6 text-center text-sm text-gray-600">
-              © 2025 青春18切符ランダム旅行. All rights reserved.
+              © 2025 青春18きっぷランダム旅行. All rights reserved.
             </div>
           </div>
         </div>
