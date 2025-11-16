@@ -17,6 +17,9 @@ export function RandomPage() {
   const [journey, setJourney] = useState<Journey | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isRolling, setIsRolling] = useState(false);
+  const [displayedDestination, setDisplayedDestination] = useState('');
+  const [showPrefecture, setShowPrefecture] = useState(false);
 
   const departureStation =
     (location.state as { departureStation?: string })?.departureStation || '';
@@ -31,28 +34,67 @@ export function RandomPage() {
   }, [departureStation]);
 
   const generateRandomJourney = async () => {
+    // 状態を完全にリセット
+    setJourney(null);
     setIsGenerating(true);
     setError(null);
+    setIsRolling(false);
+    setShowPrefecture(false);
+    setDisplayedDestination('');
 
     try {
       const result = await fetchRandomJourney({
         departureStation,
       });
+
+      // API呼び出し完了後、journeyをセット
       setJourney(result);
       setRetryCount(0);
+      setIsGenerating(false);
+
+      // スロット演出開始（isGeneratingがfalseになった後）
+      await performSlotAnimation(result.destination.name);
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
           : 'ランダムな目的地の生成に失敗しました';
       setError(errorMessage);
+      setIsGenerating(false);
 
       if (retryCount < 3) {
         setRetryCount(retryCount + 1);
       }
-    } finally {
-      setIsGenerating(false);
     }
+  };
+
+  const performSlotAnimation = async (destinationName: string) => {
+    setIsRolling(true);
+    const chars = destinationName.split('');
+
+    // ランダム文字候補（日本語の駅名によく使われる文字）
+    const randomChars = '東西南北新大小上下中前後本町市田川山海島港橋'.split('');
+
+    for (let i = 0; i < chars.length; i++) {
+      // 各文字をロールする（10回ランダム文字を表示）
+      for (let j = 0; j < 10; j++) {
+        const randomChar = randomChars[Math.floor(Math.random() * randomChars.length)];
+        setDisplayedDestination(
+          chars.slice(0, i).join('') + randomChar + '　'.repeat(chars.length - i - 1)
+        );
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+
+      // 確定した文字を表示
+      setDisplayedDestination(chars.slice(0, i + 1).join('') + '　'.repeat(chars.length - i - 1));
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // 全文字確定後、都道府県を表示
+    setDisplayedDestination(destinationName);
+    setIsRolling(false);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    setShowPrefecture(true);
   };
 
   const handleShare = async () => {
@@ -114,13 +156,13 @@ export function RandomPage() {
 
             {/* 出発駅 */}
             <div className="bg-blue-50 rounded-lg p-6">
-              <div className="text-sm text-blue-600 font-semibold mb-1">
+              <div className="text-sm text-blue-600 font-semibold mb-1 text-center">
                 出発駅
               </div>
-              <div className="text-2xl font-bold text-blue-900">
+              <div className="text-2xl font-bold text-blue-900 flex items-center justify-center">
                 {journey.departure.name}
               </div>
-              <div className="text-sm text-blue-700 mt-1">
+              <div className="text-sm text-blue-700 mt-1 text-center">
                 {journey.departure.prefecture}
               </div>
             </div>
@@ -133,12 +175,14 @@ export function RandomPage() {
               <div className="text-sm text-green-600 font-semibold mb-1">
                 目的地駅
               </div>
-              <div className="text-2xl font-bold text-green-900">
-                {journey.destination.name}
+              <div className="text-2xl font-bold text-green-900 min-h-[2.5rem] flex items-center justify-center">
+                {displayedDestination || journey.destination.name}
               </div>
-              <div className="text-sm text-green-700 mt-1">
-                {journey.destination.prefecture}
-              </div>
+              {showPrefecture && (
+                <div className="text-sm text-green-700 mt-1 animate-fadeIn">
+                  {journey.destination.prefecture}
+                </div>
+              )}
             </div>
 
             {/* アクションボタン */}
