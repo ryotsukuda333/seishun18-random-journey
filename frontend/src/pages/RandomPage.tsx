@@ -2,7 +2,7 @@
  * ランダム旅行ページコンポーネント
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -38,16 +38,7 @@ export function RandomPage() {
   const departureStation =
     (location.state as { departureStation?: string })?.departureStation || '';
 
-  useEffect(() => {
-    if (!departureStation) {
-      navigate('/');
-      return;
-    }
-
-    generateRandomJourney();
-  }, [departureStation]);
-
-  const generateRandomJourney = async () => {
+  const generateRandomJourney = useCallback(async () => {
     // 状態を完全にリセット
     setJourney(null);
     setIsGenerating(true);
@@ -76,7 +67,16 @@ export function RandomPage() {
       setIsGenerating(false);
       // 自動再試行は行わない
     }
-  };
+  }, [departureStation]);
+
+  useEffect(() => {
+    if (!departureStation) {
+      navigate('/');
+      return;
+    }
+
+    generateRandomJourney();
+  }, [departureStation, navigate, generateRandomJourney]);
 
   const performSlotAnimation = async (destinationName: string) => {
     setIsRolling(true);
@@ -197,7 +197,7 @@ export function RandomPage() {
                   <div className="text-sm text-green-700 mt-1 animate-fadeIn text-center">
                     {journey.destination.prefecture}
                   </div>
-                  <div className="absolute bottom-2 right-3 animate-fadeIn">
+                  <div className="absolute bottom-2 right-3 animate-fadeIn flex flex-col items-end gap-1">
                     <a
                       href={`https://www.perplexity.ai/search?q=${encodeURIComponent(journey.destination.name + '駅')}`}
                       target="_blank"
@@ -205,6 +205,14 @@ export function RandomPage() {
                       className="text-xs text-green-600 hover:text-green-800 hover:underline transition-colors"
                     >
                       {journey.destination.name}駅とは?
+                    </a>
+                    <a
+                      href={`https://www.perplexity.ai/search?q=${encodeURIComponent(journey.destination.name + '駅周辺の観光スポット')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-green-600 hover:text-green-800 hover:underline transition-colors"
+                    >
+                      {journey.destination.name}駅周辺の観光スポットは?
                     </a>
                   </div>
                 </>
