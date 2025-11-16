@@ -176,7 +176,7 @@ export function RandomPage() {
             <div className="text-center text-4xl">⬇️</div>
 
             {/* 目的地駅 */}
-            <div className="bg-green-50 rounded-lg p-6">
+            <div className="bg-green-50 rounded-lg p-6 relative">
               <div className="text-sm text-green-600 font-semibold mb-1">
                 目的地駅
               </div>
@@ -192,6 +192,16 @@ export function RandomPage() {
                   )}
                   <div className="text-sm text-green-700 mt-1 animate-fadeIn text-center">
                     {journey.destination.prefecture}
+                  </div>
+                  <div className="absolute bottom-2 right-3 animate-fadeIn">
+                    <a
+                      href={`https://www.perplexity.ai/search?q=${encodeURIComponent(journey.destination.name + '駅')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-green-600 hover:text-green-800 hover:underline transition-colors"
+                    >
+                      {journey.destination.name}駅とは?
+                    </a>
                   </div>
                 </>
               )}
